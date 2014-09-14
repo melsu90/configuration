@@ -1,5 +1,15 @@
 # Variables for nginx role
 ---
+# These are paramters to the role
+# and should be overridden
+nginx_sites: []
+nginx_redirects: {}
+nginx_extra_sites: []
+nginx_extra_configs: []
+NGINX_EDXAPP_EXTRA_SITES: []
+NGINX_EDXAPP_EXTRA_CONFIGS: []
+NGINX_EDXAPP_CUSTOM_REDIRECTS: {}
+
 NGINX_ENABLE_SSL: False
 # Set these to real paths on your
 # filesystem, otherwise nginx will
@@ -13,6 +23,7 @@ NGINX_ENABLE_SSL: False
 NGINX_SSL_CERTIFICATE: '/root/ssl/wildcard.upex.edu.ec.crt'
 NGINX_SSL_KEY: '/root/ssl/wildcard.upex.edu.ec.key'
 
+NGINX_LOG_FORMAT_NAME: 'p_combined'
 # When set to False, nginx will pass X-Forwarded-For, X-Forwarded-Port,
 # and X-Forwarded-Proto headers through to the backend unmodified.
 # This is desired when nginx is deployed behind another load balancer

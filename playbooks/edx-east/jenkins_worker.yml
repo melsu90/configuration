@@ -15,8 +15,8 @@
     - roles/xserver/defaults/main.yml
     - roles/forum/defaults/main.yml
   roles:
-    - common
     - edxlocal
     - mongo
     - browsers
+    - browsermob-proxy
     - jenkins_worker

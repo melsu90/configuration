@@ -17,6 +17,7 @@
 # - dns_name
 # - environment
 # - name_tag
+set -x
 env
 export PYTHONUNBUFFERED=1
 export BOTO_CONFIG=/var/lib/jenkins/${aws_account}.boto
@@ -85,11 +86,11 @@ fi
 
 if [[ -z $ami ]]; then
   if [[ $server_type == "full_edx_installation" ]]; then
-    ami="ami-f287419a"
+    ami="ami-8214cfea"
   elif [[ $server_type == "ubuntu_12.04" || $server_type == "full_edx_installation_from_scratch" ]]; then
-    ami="ami-f478849c"
+    ami="ami-8eb061e6"
   elif [[ $server_type == "ubuntu_14.04(experimental)" ]]; then
-    ami="ami-a6926dce"
+    ami="ami-a0ff23c8"
   fi
 fi
 
@@ -166,7 +167,7 @@ COMMON_USER_INFO:
     github: true
     type: admin
 USER_CMD_PROMPT: '[$name_tag] '
-COMMON_ENABLE_NEWRELIC: $enable_monitoring
+COMMON_ENABLE_NEWRELIC_APP: $enable_monitoring
 COMMON_ENABLE_DATADOG: $enable_monitoring
 FORUM_NEW_RELIC_ENABLE: $enable_monitoring
 EDXAPP_NEWRELIC_LMS_APPNAME: sandbox-${dns_name}-edxapp-lms
@@ -216,7 +217,7 @@ EOF
 fi
 
 declare -A deploy
-roles="edxapp forum xqueue xserver ora discern certs demo"
+roles="edxapp forum xqueue xserver ora discern certs demo testcourses"
 for role in $roles; do
     deploy[$role]=${!role}
 done
