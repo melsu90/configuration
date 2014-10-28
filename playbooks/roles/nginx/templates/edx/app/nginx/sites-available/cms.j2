@@ -18,11 +18,14 @@ server {
 
 server {
   # CMS configuration file for nginx, templated by ansible
+      
+  # 500 error pages
+  error_page 500 502 504 /server/server-error.html;
 
   {% if NGINX_ENABLE_SSL %}
 
-  listen {{EDXAPP_CMS_NGINX_PORT}} {{default_site}} ssl;
-  listen {{EDXAPP_CMS_SSL_NGINX_PORT}} ssl;
+  listen {{ EDXAPP_CMS_NGINX_PORT }} {{ default_site }} ssl;
+  listen {{ EDXAPP_CMS_SSL_NGINX_PORT }} ssl;
 
   ssl_certificate /etc/ssl/certs/{{ NGINX_SSL_CERTIFICATE|basename }};
   ssl_certificate_key /etc/ssl/private/{{ NGINX_SSL_KEY|basename }};
