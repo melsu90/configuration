@@ -98,6 +98,40 @@
     - install
     - install:configuration
 
+- name: drop the elasticsearch index config for logstash indexes
+  copy:
+    src: elasticsearch_template.json
+    dest: "{{ elasticsearch_cfg_dir }}/elasticsearch_template.json"
+  tags:
+    - install
+    - install:configuration
+
+- name: drop the kibana dashboard schema
+  copy:
+    src: user_activity_dashboard.json
+    dest: "{{ elasticsearch_cfg_dir }}/user_activity_dashboard.json"
+  tags:
+    - install
+    - install:configuration
+
+- name: apply the dropped index config for logstash indexes
+  command: curl -XPUT localhost:9200/_template/logstash -d''@"{{ elasticsearch_cfg_dir }}"/elasticsearch_template.json''
+  tags:
+    - install
+    - install:configuration
+
+- name: apply the dropped kibana dashboard schema
+  command: curl -XPUT localhost:9200/kibana-int/dashboard/User_Activity -d''@"{{ elasticsearch_cfg_dir }}"/user_activity_dashboard.json''
+  tags:
+    - install
+    - install:configuration
+
+- name: change search threadpool configuration to make the queue size unlimited 
+  command: 'curl -XPUT localhost:9200/_cluster/settings -d ''{"persistent" : {"threadpool.search.queue_size" : -1}}'''
+  tags:
+    - install
+    - install:configuration
+
 - name: Ensure elasticsearch is enabled and started
   service: 
     name: elasticsearch

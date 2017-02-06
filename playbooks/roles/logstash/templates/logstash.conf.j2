@@ -79,6 +79,13 @@ filter {
     grok {
       match => { "message" => "%{GREEDYDATA:@message}" }
     }
+    mutate {
+      add_field => { "request" => ""}
+    }
+    json {
+      source => message
+      target => "request"
+    }
   } else if [type] == "logstash" {
     grok {
       match => { "message" => "\{\:%{WORD}\=\>\"%{TIMESTAMP_ISO8601:syslog_timestamp}\"\, %{GREEDYDATA:@message}\}" }
