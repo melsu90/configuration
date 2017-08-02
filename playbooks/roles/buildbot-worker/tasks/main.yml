@@ -43,23 +43,31 @@
 
 - name: create virtualenv for buildbot-worker
   command: virtualenv --no-site-packages "{{ buildbot_worker_venv }}"
+  become: yes
+  become_user: "{{ buildbot_worker_user }}"
 
 - name: install buildbot-worker
   pip:
     name: 'buildbot-worker'
     virtualenv: "{{ buildbot_worker_venv }}"
+  become: yes
+  become_user: "{{ buildbot_worker_user }}"
 
 - name: install setuptools-trial
   pip:
     name: 'setuptools-trial'
     virtualenv: "{{ buildbot_worker_venv }}"
+  become: yes
+  become_user: "{{ buildbot_worker_user }}"
 
 - name: create buildbot worker
-  command: "{{ buildbot_worker_venv_bin }}/buildbot-worker create-worker worker localhost example-worker pass"
-  args:
-    chdir: "{{ buildbot_worker_dir }}"
+  command: >
+    "{{ buildbot_worker_venv_bin }}/buildbot-worker create-worker {{ buildbot_worker_workerdir }}
+    {{ buildbot_worker_host }} {{ buildbot_worker_name }} {{ buildbot_worker_pass }}"
+  become: yes
+  become_user: "{{ buildbot_worker_user }}"
 
 - name: start buildbot worker
-  command: "{{ buildbot_worker_venv_bin }}/buildbot-worker start worker"
-  args:
-    chdir: "{{ buildbot_worker_dir }}"
+  command: "{{ buildbot_worker_venv_bin }}/buildbot-worker start {{ buildbot_worker_workerdir }}"
+  become: yes
+  become_user: "{{ buildbot_worker_user }}"

@@ -43,23 +43,27 @@
 
 - name: create virtualenv for buildbot-master
   command: virtualenv --no-site-packages "{{ buildbot_master_venv }}"
+  become: yes
+  become_user: "{{ buildbot_master_user }}"
 
 - name: install buildbot master
   pip:
     name: 'buildbot[bundle]'
     virtualenv: "{{ buildbot_master_venv }}"
+  become: yes
+  become_user: "{{ buildbot_master_user }}"
 
 - name: create buildbot master
-  command: "{{ buildbot_master_venv_bin }}/buildbot create-master master"
-  args:
-    chdir: "{{ buildbot_master_dir }}"
+  command: "{{ buildbot_master_venv_bin }}/buildbot create-master {{ buildbot_master_masterdir }}"
+  become: yes
+  become_user: "{{ buildbot_master_user }}"
 
 - name: rename master.cfg.sample to master.cfg
-  command: mv master/master.cfg.sample master/master.cfg
-  args:
-    chdir: "{{ buildbot_master_dir }}"
+  command: "mv {{ buildbot_master_masterdir }}/master.cfg.sample {{ buildbot_master_masterdir }}/master.cfg"
+  become: yes
+  become_user: "{{ buildbot_master_user }}"
 
 - name: start buildbot master
-  command: "{{ buildbot_master_venv_bin }}/buildbot start master"
-  args:
-    chdir: "{{ buildbot_master_dir }}"
+  command: "{{ buildbot_master_venv_bin }}/buildbot start {{ buildbot_master_masterdir }}"
+  become: yes
+  become_user: "{{ buildbot_master_user }}"
