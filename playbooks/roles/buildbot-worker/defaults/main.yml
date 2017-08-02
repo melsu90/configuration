@@ -10,4 +10,9 @@
 ##
 # Defaults for role buildbot-worker
 #
-buildbot_worker_dir: "{{ buildbot_app_dir }}/bb-worker"
+buildbot_worker_group: buildbot_worker
+buildbot_worker_user: buildbot_worker
+
+buildbot_worker_dir: "{{ COMMON_APP_DIR }}/buildbot-worker"
+buildbot_worker_venv: "{{ buildbot_worker_dir }}/venv"
+buildbot_worker_venv_bin: "{{ buildbot_worker_venv }}/bin"

@@ -15,28 +15,51 @@
 #
 #
 # Dependencies:
-#   - buildbot-common
+#   - common
 #
 #
 # Example play:
 #
 #
 
-- name: install buildbot-worker
-  pip: >
-    name="buildbot-worker"
-    virtualenv="{{ buildbot_venv_dir }}"
+- name: create buildbot worker group
+  group:
+    name: "{{ buildbot_worker_group }}"
+    state: present
 
-- name: make bb-worker directory
-  file: >
-    path="{{ buildbot_worker_dir }}"
-    state="directory"
-    mode=0755
+- name: add the buildbot worker user to the group
+  user:
+    name: "{{ buildbot_worker_user }}"
+    append: yes
+    groups: "{{ buildbot_worker_group }}"
+
+- name: make buildbot-worker directory
+  file:
+    path: "{{ buildbot_worker_dir }}"
+    state: directory
+    mode: 0755
+    owner: "{{ buildbot_worker_user }}"
+    group: "{{ buildbot_worker_group }}"
+
+- name: create virtualenv for buildbot-worker
+  command: virtualenv --no-site-packages "{{ buildbot_worker_venv }}"
+
+- name: install buildbot-worker
+  pip:
+    name: 'buildbot-worker'
+    virtualenv: "{{ buildbot_worker_venv }}"
 
 - name: install setuptools-trial
-  pip: >
-    name="setuptools-trial"
-    virtualenv="{{ buildbot_venv_dir }}"
+  pip:
+    name: 'setuptools-trial'
+    virtualenv: "{{ buildbot_worker_venv }}"
 
 - name: create buildbot worker
-  command: "{{ buildbot_venv_bin }}/buildbot-worker create-worker worker localhost example-worker pass" chdir="{{ buildbot_worker_dir }}"
+  command: "{{ buildbot_worker_venv_bin }}/buildbot-worker create-worker worker localhost example-worker pass"
+  args:
+    chdir: "{{ buildbot_worker_dir }}"
+
+- name: start buildbot worker
+  command: "{{ buildbot_worker_venv_bin }}/buildbot-worker start worker"
+  args:
+    chdir: "{{ buildbot_worker_dir }}"

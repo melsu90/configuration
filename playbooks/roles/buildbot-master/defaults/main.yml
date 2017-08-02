@@ -10,4 +10,9 @@
 ##
 # Defaults for role buildbot-master
 #
-buildbot_master_dir: "{{ buildbot_app_dir }}/bb-master"
+buildbot_master_group: buildbot_master
+buildbot_master_user: buildbot_master
+
+buildbot_master_dir: "{{ COMMON_APP_DIR }}/buildbot-master"
+buildbot_master_venv: "{{ buildbot_master_dir }}/venv"
+buildbot_master_venv_bin: "{{ buildbot_master_venv }}/bin"

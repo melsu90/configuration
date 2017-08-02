@@ -15,26 +15,51 @@
 # 
 #
 # Dependencies:
-#   - buildbot-common
+#   - common
 #
 # 
 # Example play:
 #
 #
 
-- name: install buildbot master
-  pip: >
-    name="'buildbot[bundle]'"
-    virtualenv="{{ buildbot_venv_dir }}"
+- name: create buildbot master group
+  group:
+    name: "{{ buildbot_master_group }}"
+    state: present
 
-- name: make bb-master directory
-  file: >
-    path="{{ buildbot_master_dir }}"
-    state="directory"
-    mode=0755
+- name: add the buildbot master user to the group
+  user:
+    name: "{{ buildbot_master_user }}"
+    append: yes
+    groups: "{{ buildbot_master_group }}"
+
+- name: make buildbot-master directory
+  file:
+    path: "{{ buildbot_master_dir }}"
+    state: directory
+    mode: 0755
+    owner: "{{ buildbot_master_user }}"
+    group: "{{ buildbot_master_group }}"
+
+- name: create virtualenv for buildbot-master
+  command: virtualenv --no-site-packages "{{ buildbot_master_venv }}"
+
+- name: install buildbot master
+  pip:
+    name: 'buildbot[bundle]'
+    virtualenv: "{{ buildbot_master_venv }}"
 
 - name: create buildbot master
-  command: "{{ buildbot_venv_bin }}/buildbot create-master master" chdir="{{ buildbot_master_dir }}"
+  command: "{{ buildbot_master_venv_bin }}/buildbot create-master master"
+  args:
+    chdir: "{{ buildbot_master_dir }}"
 
 - name: rename master.cfg.sample to master.cfg
   command: mv master/master.cfg.sample master/master.cfg
+  args:
+    chdir: "{{ buildbot_master_dir }}"
+
+- name: start buildbot master
+  command: "{{ buildbot_master_venv_bin }}/buildbot start master"
+  args:
+    chdir: "{{ buildbot_master_dir }}"
