@@ -1,0 +1,31 @@
+---
+#
+# edX Configuration
+#
+# github:     https://github.com/edx/configuration
+# wiki:       https://github.com/edx/configuration/wiki
+# code style: https://github.com/edx/configuration/wiki/Ansible-Coding-Conventions
+# license:    https://github.com/edx/configuration/blob/master/LICENSE.TXT
+#
+#
+#
+# Tasks for role buildbot-master
+# 
+# Overview:
+# 
+#
+# Dependencies:
+#   - buildbot-common
+# 
+# Example play:
+#
+#
+
+- name: make buildbot directory
+  file: >
+    path="{{ buildbot_app_dir }}"
+    state="directory"
+    mode=0755
+
+- name: create virtualenv for buildbot
+  command: virtualenv --no-site-packages "{{ buildbot_venv_dir }}"

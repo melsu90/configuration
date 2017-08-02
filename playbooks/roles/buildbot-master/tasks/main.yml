@@ -1,0 +1,40 @@
+---
+#
+# edX Configuration
+#
+# github:     https://github.com/edx/configuration
+# wiki:       https://github.com/edx/configuration/wiki
+# code style: https://github.com/edx/configuration/wiki/Ansible-Coding-Conventions
+# license:    https://github.com/edx/configuration/blob/master/LICENSE.TXT
+#
+#
+#
+# Tasks for role buildbot-master
+# 
+# Overview:
+# 
+#
+# Dependencies:
+#   - buildbot-common
+#
+# 
+# Example play:
+#
+#
+
+- name: install buildbot master
+  pip: >
+    name="'buildbot[bundle]'"
+    virtualenv="{{ buildbot_venv_dir }}"
+
+- name: make bb-master directory
+  file: >
+    path="{{ buildbot_master_dir }}"
+    state="directory"
+    mode=0755
+
+- name: create buildbot master
+  command: "{{ buildbot_venv_bin }}/buildbot create-master master" chdir="{{ buildbot_master_dir }}"
+
+- name: rename master.cfg.sample to master.cfg
+  command: mv master/master.cfg.sample master/master.cfg

@@ -1,0 +1,42 @@
+---
+#
+# edX Configuration
+#
+# github:     https://github.com/edx/configuration
+# wiki:       https://github.com/edx/configuration/wiki
+# code style: https://github.com/edx/configuration/wiki/Ansible-Coding-Conventions
+# license:    https://github.com/edx/configuration/blob/master/LICENSE.TXT
+#
+#
+#
+# Tasks for role buildbot-worker
+# 
+# Overview:
+#
+#
+# Dependencies:
+#   - buildbot-common
+#
+#
+# Example play:
+#
+#
+
+- name: install buildbot-worker
+  pip: >
+    name="buildbot-worker"
+    virtualenv="{{ buildbot_venv_dir }}"
+
+- name: make bb-worker directory
+  file: >
+    path="{{ buildbot_worker_dir }}"
+    state="directory"
+    mode=0755
+
+- name: install setuptools-trial
+  pip: >
+    name="setuptools-trial"
+    virtualenv="{{ buildbot_venv_dir }}"
+
+- name: create buildbot worker
+  command: "{{ buildbot_venv_bin }}/buildbot-worker create-worker worker localhost example-worker pass" chdir="{{ buildbot_worker_dir }}"
