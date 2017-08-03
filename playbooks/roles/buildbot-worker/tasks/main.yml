@@ -61,13 +61,14 @@
   become_user: "{{ buildbot_worker_user }}"
 
 - name: create buildbot worker
-  command: >
-    "{{ buildbot_worker_venv_bin }}/buildbot-worker create-worker {{ buildbot_worker_workerdir }}
-    {{ buildbot_worker_host }} {{ buildbot_worker_name }} {{ buildbot_worker_pass }}"
+  command: "{{ buildbot_worker_venv_bin }}/buildbot-worker create-worker \
+    {{ buildbot_worker_workerdir }} {{ buildbot_worker_host }} \
+    {{ buildbot_worker_name }} {{ buildbot_worker_pass }}"
   become: yes
   become_user: "{{ buildbot_worker_user }}"
 
 - name: start buildbot worker
-  command: "{{ buildbot_worker_venv_bin }}/buildbot-worker start {{ buildbot_worker_workerdir }}"
+  command: "{{ buildbot_worker_venv_bin }}/buildbot-worker start \
+    {{ buildbot_worker_workerdir }}"
   become: yes
   become_user: "{{ buildbot_worker_user }}"

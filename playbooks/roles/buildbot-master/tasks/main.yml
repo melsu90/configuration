@@ -37,9 +37,9 @@
   file:
     path: "{{ buildbot_master_dir }}"
     state: directory
-    mode: 0755
     owner: "{{ buildbot_master_user }}"
     group: "{{ buildbot_master_group }}"
+    mode: 0755
 
 - name: create virtualenv for buildbot-master
   command: virtualenv --no-site-packages "{{ buildbot_master_venv }}"
@@ -54,16 +54,26 @@
   become_user: "{{ buildbot_master_user }}"
 
 - name: create buildbot master
-  command: "{{ buildbot_master_venv_bin }}/buildbot create-master {{ buildbot_master_masterdir }}"
+  command: "{{ buildbot_master_venv_bin }}/buildbot create-master \
+    {{ buildbot_master_masterdir }}"
   become: yes
   become_user: "{{ buildbot_master_user }}"
 
-- name: rename master.cfg.sample to master.cfg
-  command: "mv {{ buildbot_master_masterdir }}/master.cfg.sample {{ buildbot_master_masterdir }}/master.cfg"
+- name: copy in config file
+  copy:
+    src: "{{ buildbot_master_files }}/master.cfg"
+    dest: "{{ buildbot_master_masterdir }}/master.cfg"
+    owner: "{{ buildbot_master_user }}"
+    group: "{{ buildbot_master_group }}"
+    mode: 0644
+
+- name: delete sample config file
+  command: "rm {{ buildbot_master_masterdir }}/master.cfg.sample"
   become: yes
   become_user: "{{ buildbot_master_user }}"
 
 - name: start buildbot master
-  command: "{{ buildbot_master_venv_bin }}/buildbot start {{ buildbot_master_masterdir }}"
+  command: "{{ buildbot_master_venv_bin }}/buildbot start \
+    {{ buildbot_master_masterdir }}"
   become: yes
   become_user: "{{ buildbot_master_user }}"

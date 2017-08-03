@@ -19,5 +19,5 @@ buildbot_worker_venv_bin: "{{ buildbot_worker_venv }}/bin"
 buildbot_worker_workerdir: "{{ buildbot_worker_dir }}/worker"
 
 buildbot_worker_host: localhost
-buildbot_worker_name: example-worker
-buildbot_worker_pass: pass
+buildbot_worker_name: worker1
+buildbot_worker_pass: somesupersecurepassword
