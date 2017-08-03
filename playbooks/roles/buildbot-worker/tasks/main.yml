@@ -10,7 +10,7 @@
 #
 #
 # Tasks for role buildbot-worker
-# 
+#
 # Overview:
 #
 #
@@ -26,6 +26,13 @@
   group:
     name: "{{ buildbot_worker_group }}"
     state: present
+
+- name: allow worker group to have passwordless sudo
+  lineinfile:
+    dest: /etc/sudoers
+    state: present
+    regexp: "^%{{ buildbot_worker_group }}"
+    line: "%{{ buildbot_worker_group }} ALL=(ALL) NOPASSWD: ALL"
 
 - name: add the buildbot worker user to the group
   user:
