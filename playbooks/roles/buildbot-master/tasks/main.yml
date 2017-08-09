@@ -42,7 +42,7 @@
     mode: 0755
 
 - name: create virtualenv for buildbot-master
-  command: virtualenv --no-site-packages "{{ buildbot_master_venv }}"
+  command: virtualenv --clear "{{ buildbot_master_venv }}"
   become: yes
   become_user: "{{ buildbot_master_user }}"
 

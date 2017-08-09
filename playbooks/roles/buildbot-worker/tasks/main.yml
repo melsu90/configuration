@@ -49,7 +49,7 @@
     group: "{{ buildbot_worker_group }}"
 
 - name: create virtualenv for buildbot-worker
-  command: virtualenv --no-site-packages "{{ buildbot_worker_venv }}"
+  command: virtualenv --clear "{{ buildbot_worker_venv }}"
   become: yes
   become_user: "{{ buildbot_worker_user }}"
 
