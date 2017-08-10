@@ -9,7 +9,7 @@
 #
 #
 #
-# Tasks for role buildbot-worker
+# Tasks for role buildbot_worker
 #
 # Overview:
 #
@@ -22,25 +22,25 @@
 #
 #
 
-- name: create buildbot worker group
+- name: Create buildbot_worker group
   group:
     name: "{{ buildbot_worker_group }}"
     state: present
 
-- name: allow worker group to have passwordless sudo
+- name: Allow buildbot_worker group to have passwordless sudo
   lineinfile:
     dest: /etc/sudoers
     state: present
     regexp: "^%{{ buildbot_worker_group }}"
     line: "%{{ buildbot_worker_group }} ALL=(ALL) NOPASSWD: ALL"
 
-- name: add the buildbot worker user to the group
+- name: Add the buildbot_worker user to the group
   user:
     name: "{{ buildbot_worker_user }}"
     append: yes
     groups: "{{ buildbot_worker_group }}"
 
-- name: make buildbot-worker directory
+- name: Make buildbot_worker directory
   file:
     path: "{{ buildbot_worker_dir }}"
     state: directory
@@ -48,26 +48,26 @@
     owner: "{{ buildbot_worker_user }}"
     group: "{{ buildbot_worker_group }}"
 
-- name: create virtualenv for buildbot-worker
+- name: Create virtualenv for buildbot_worker
   command: virtualenv --clear "{{ buildbot_worker_venv }}"
   become: yes
   become_user: "{{ buildbot_worker_user }}"
 
-- name: install buildbot-worker
+- name: Install buildbot-worker
   pip:
     name: 'buildbot-worker'
     virtualenv: "{{ buildbot_worker_venv }}"
   become: yes
   become_user: "{{ buildbot_worker_user }}"
 
-- name: create buildbot worker
+- name: Create worker1
   command: "{{ buildbot_worker_venv_bin }}/buildbot-worker create-worker \
     {{ buildbot_worker_workerdir }} {{ buildbot_worker_host }} \
     {{ buildbot_worker_name }} {{ buildbot_worker_pass }}"
   become: yes
   become_user: "{{ buildbot_worker_user }}"
 
-- name: start buildbot worker
+- name: Start worker1
   command: "{{ buildbot_worker_venv_bin }}/buildbot-worker start \
     {{ buildbot_worker_workerdir }}"
   become: yes

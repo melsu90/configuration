@@ -9,7 +9,7 @@
 #
 #
 #
-# Tasks for role buildbot-master
+# Tasks for role buildbot_master
 # 
 # Overview:
 # 
@@ -22,18 +22,18 @@
 #
 #
 
-- name: create buildbot master group
+- name: Create buildbot_master group
   group:
     name: "{{ buildbot_master_group }}"
     state: present
 
-- name: add the buildbot master user to the group
+- name: Add the buildbot_master user to the group
   user:
     name: "{{ buildbot_master_user }}"
     append: yes
     groups: "{{ buildbot_master_group }}"
 
-- name: make buildbot-master directory
+- name: Make buildbot_master directory
   file:
     path: "{{ buildbot_master_dir }}"
     state: directory
@@ -41,25 +41,25 @@
     group: "{{ buildbot_master_group }}"
     mode: 0755
 
-- name: create virtualenv for buildbot-master
+- name: Create virtualenv for buildbot_master
   command: virtualenv --clear "{{ buildbot_master_venv }}"
   become: yes
   become_user: "{{ buildbot_master_user }}"
 
-- name: install buildbot master
+- name: Install buildbot
   pip:
     name: 'buildbot[bundle]'
     virtualenv: "{{ buildbot_master_venv }}"
   become: yes
   become_user: "{{ buildbot_master_user }}"
 
-- name: create buildbot master
+- name: Create master
   command: "{{ buildbot_master_venv_bin }}/buildbot create-master \
     {{ buildbot_master_masterdir }}"
   become: yes
   become_user: "{{ buildbot_master_user }}"
 
-- name: copy in config file
+- name: Copy in config file
   copy:
     src: "{{ buildbot_master_files }}/master.cfg"
     dest: "{{ buildbot_master_masterdir }}/master.cfg"
@@ -67,12 +67,12 @@
     group: "{{ buildbot_master_group }}"
     mode: 0644
 
-- name: delete sample config file
+- name: Delete sample config file
   command: "rm {{ buildbot_master_masterdir }}/master.cfg.sample"
   become: yes
   become_user: "{{ buildbot_master_user }}"
 
-- name: start buildbot master
+- name: Start master
   command: "{{ buildbot_master_venv_bin }}/buildbot start \
     {{ buildbot_master_masterdir }}"
   become: yes

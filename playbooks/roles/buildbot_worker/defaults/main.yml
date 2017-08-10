@@ -8,12 +8,12 @@
 # license:    https://github.com/edx/configuration/blob/master/LICENSE.TXT
 #
 ##
-# Defaults for role buildbot-worker
+# Defaults for role buildbot_worker
 #
 buildbot_worker_group: buildbot_worker
 buildbot_worker_user: buildbot_worker
 
-buildbot_worker_dir: "{{ COMMON_APP_DIR }}/buildbot-worker"
+buildbot_worker_dir: "{{ COMMON_APP_DIR }}/buildbot_worker"
 buildbot_worker_venv: "{{ buildbot_worker_dir }}/venv"
 buildbot_worker_venv_bin: "{{ buildbot_worker_venv }}/bin"
 buildbot_worker_workerdir: "{{ buildbot_worker_dir }}/worker"
