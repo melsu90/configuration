@@ -48,6 +48,10 @@
     owner: "{{ buildbot_worker_user }}"
     group: "{{ buildbot_worker_group }}"
 
+# TODO: Create task for stopping workers
+# Currently, you can only reprovision while workers are stopped. To
+# reprovision, first either manually stop all workers or run 'vagrant halt'.
+
 - name: Create virtualenv for buildbot_worker
   command: virtualenv --clear "{{ buildbot_worker_venv }}"
   become: yes
@@ -72,3 +76,11 @@
     {{ buildbot_worker_workerdir }}"
   become: yes
   become_user: "{{ buildbot_worker_user }}"
+
+- name: Install configuration requirements
+  apt:
+    name: "{{ item }}"
+    update_cache: yes
+  with_items:
+    - nodejs
+    - python-demjson

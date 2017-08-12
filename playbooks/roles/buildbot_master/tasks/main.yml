@@ -41,6 +41,10 @@
     group: "{{ buildbot_master_group }}"
     mode: 0755
 
+# TODO: Create task for stopping master if master exists
+# Currently, you can only reprovision while master is not running. To
+# reprovision, first either manually stop master or run 'vagrant halt'.
+
 - name: Create virtualenv for buildbot_master
   command: virtualenv --clear "{{ buildbot_master_venv }}"
   become: yes
