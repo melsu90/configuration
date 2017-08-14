@@ -66,14 +66,27 @@
 
 - name: Create worker1
   command: "{{ buildbot_worker_venv_bin }}/buildbot-worker create-worker \
-    {{ buildbot_worker_workerdir }} {{ buildbot_worker_host }} \
-    {{ buildbot_worker_name }} {{ buildbot_worker_pass }}"
+    {{ buildbot_worker_worker1dir }} {{ buildbot_worker1_host }} \
+    {{ buildbot_worker1_name }} {{ buildbot_worker1_pass }}"
   become: yes
   become_user: "{{ buildbot_worker_user }}"
 
 - name: Start worker1
   command: "{{ buildbot_worker_venv_bin }}/buildbot-worker start \
-    {{ buildbot_worker_workerdir }}"
+    {{ buildbot_worker_worker1dir }}"
+  become: yes
+  become_user: "{{ buildbot_worker_user }}"
+
+- name: Create worker2
+  command: "{{ buildbot_worker_venv_bin }}/buildbot-worker create-worker \
+    {{ buildbot_worker_worker2dir }} {{ buildbot_worker2_host }} \
+    {{ buildbot_worker2_name }} {{ buildbot_worker2_pass }}"
+  become: yes
+  become_user: "{{ buildbot_worker_user }}"
+
+- name: Start worker2
+  command: "{{ buildbot_worker_venv_bin }}/buildbot-worker start \
+    {{ buildbot_worker_worker2dir }}"
   become: yes
   become_user: "{{ buildbot_worker_user }}"
 
@@ -84,3 +97,13 @@
   with_items:
     - nodejs
     - python-demjson
+  become: yes
+
+- name: Install edx-platform requirements
+  apt:
+    name: "{{ item }}"
+    update_cache: yes
+  with_items:
+    - npm
+    - bundler
+  become: yes
