@@ -16,6 +16,7 @@
 #
 # Dependencies:
 #   - common
+#   - jscover
 #
 #
 # Example play:
@@ -84,11 +85,15 @@
   become: yes
   become_user: "{{ buildbot_worker_user }}"
 
+# The -l flag is necessary to get npm to work properly. It can be added more
+# elegantly in Ansible 2.2 by using become_flags
 - name: Start worker2
-  command: "{{ buildbot_worker_venv_bin }}/buildbot-worker start \
-    {{ buildbot_worker_worker2dir }}"
+  command: "su {{ buildbot_worker_user }} -l -c \
+    \"{{ buildbot_worker_venv_bin }}/buildbot-worker start \
+    {{ buildbot_worker_worker2dir }}\""
   become: yes
-  become_user: "{{ buildbot_worker_user }}"
+  environment:
+    JSCOVER_JAR: "/usr/local/bin/JSCover-all-{{ jscover_version }}.jar"
 
 - name: Install configuration requirements
   apt:
@@ -104,6 +109,6 @@
     name: "{{ item }}"
     update_cache: yes
   with_items:
-    - npm
     - bundler
+    - firefox=28.0+build2-0ubuntu2
   become: yes
