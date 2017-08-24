@@ -17,12 +17,30 @@ buildbot_worker_dir: "{{ COMMON_APP_DIR }}/buildbot_worker"
 buildbot_worker_venv: "{{ buildbot_worker_dir }}/venv"
 buildbot_worker_venv_bin: "{{ buildbot_worker_venv }}/bin"
 
-buildbot_worker_worker1dir: "{{ buildbot_worker_dir }}/worker1"
-buildbot_worker1_host: localhost
-buildbot_worker1_name: worker1
-buildbot_worker1_pass: somesupersecurepassword
+buildbot_worker_configuration_workers:
+  - name: configuration_worker1
+    password: somesupersecurepassword
+    host: localhost
 
-buildbot_worker_worker2dir: "{{ buildbot_worker_dir }}/worker2"
-buildbot_worker2_host: localhost
-buildbot_worker2_name: worker2
-buildbot_worker2_pass: anothersupersecurepassword
+buildbot_worker_edx_platform_workers:
+  - name: edx_platform_worker1
+    password: anothersupersecurepassword
+    host: localhost
+  - name: edx_platform_worker2
+    password: anothersupersecurepassword
+    host: localhost
+  - name: edx_platform_worker3
+    password: anothersupersecurepassword
+    host: localhost
+  - name: edx_platform_worker4
+    password: anothersupersecurepassword
+    host: localhost
+
+buildbot_worker_configuration_requirements:
+  - nodejs
+  - python-demjson
+
+buildbot_worker_edx_platform_requirements:
+  - bundler
+  - gettext
+  - firefox=28.0+build2-0ubuntu2

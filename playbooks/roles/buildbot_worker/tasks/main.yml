@@ -65,50 +65,50 @@
   become: yes
   become_user: "{{ buildbot_worker_user }}"
 
-- name: Create worker1
+- name: Create configuration workers
   command: "{{ buildbot_worker_venv_bin }}/buildbot-worker create-worker \
-    {{ buildbot_worker_worker1dir }} {{ buildbot_worker1_host }} \
-    {{ buildbot_worker1_name }} {{ buildbot_worker1_pass }}"
+    {{ buildbot_worker_dir }}/{{ item.name }} {{ item.host }} \
+    {{ item.name }} {{ item.password }}"
+  with_items: "{{ buildbot_worker_configuration_workers }}"
   become: yes
   become_user: "{{ buildbot_worker_user }}"
 
-- name: Start worker1
+- name: Start configuration workers
   command: "{{ buildbot_worker_venv_bin }}/buildbot-worker start \
-    {{ buildbot_worker_worker1dir }}"
+    {{ buildbot_worker_dir }}/{{ item.name }}"
+  with_items: "{{ buildbot_worker_configuration_workers }}"
   become: yes
   become_user: "{{ buildbot_worker_user }}"
 
-- name: Create worker2
+- name: Create edx-platform workers
   command: "{{ buildbot_worker_venv_bin }}/buildbot-worker create-worker \
-    {{ buildbot_worker_worker2dir }} {{ buildbot_worker2_host }} \
-    {{ buildbot_worker2_name }} {{ buildbot_worker2_pass }}"
+    {{ buildbot_worker_dir }}/{{ item.name }} {{ item.host }} \
+    {{ item.name }} {{ item.password }}"
+  with_items: "{{ buildbot_worker_edx_platform_workers }}"
   become: yes
   become_user: "{{ buildbot_worker_user }}"
 
 # The -l flag is necessary to get npm to work properly. It can be added more
-# elegantly in Ansible 2.2 by using become_flags
-- name: Start worker2
+# elegantly in Ansible 2.2 by using 'become_flags' (which should also allow
+# the use of the use of 'evironment' for setting the JSCOVER_JAR variable).
+- name: Start edx-platform workers
   command: "su {{ buildbot_worker_user }} -l -c \
-    \"{{ buildbot_worker_venv_bin }}/buildbot-worker start \
-    {{ buildbot_worker_worker2dir }}\""
+    \"JSCOVER_JAR=\\\"/usr/local/bin/JSCover-all-{{ jscover_version }}.jar\\\" \
+    {{ buildbot_worker_venv_bin }}/buildbot-worker start \
+    {{ buildbot_worker_dir }}/{{ item.name }}\""
+  with_items: "{{ buildbot_worker_edx_platform_workers }}"
   become: yes
-  environment:
-    JSCOVER_JAR: "/usr/local/bin/JSCover-all-{{ jscover_version }}.jar"
 
 - name: Install configuration requirements
   apt:
     name: "{{ item }}"
     update_cache: yes
-  with_items:
-    - nodejs
-    - python-demjson
+  with_items: "{{ buildbot_worker_configuration_requirements }}"
   become: yes
 
 - name: Install edx-platform requirements
   apt:
     name: "{{ item }}"
     update_cache: yes
-  with_items:
-    - bundler
-    - firefox=28.0+build2-0ubuntu2
+  with_items: "{{ buildbot_worker_edx_platform_requirements }}"
   become: yes
