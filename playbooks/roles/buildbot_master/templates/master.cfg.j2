@@ -10,31 +10,17 @@ c = BuildmasterConfig = {}
 ####### WORKERS
 
 c['workers'] = [
+{% for worker in buildbot_common_all_workers %}
     worker.Worker(
-        'configuration_worker1',
-        'somesupersecurepassword',
+        '{{ worker.name }}',
+        '{{ worker.password }}',
     ),
-    worker.Worker(
-        'edx_platform_worker1',
-        'anothersupersecurepassword',
-    ),
-    worker.Worker(
-        'edx_platform_worker2',
-        'anothersupersecurepassword',
-    ),
-    worker.Worker(
-        'edx_platform_worker3',
-        'anothersupersecurepassword',
-    ),
-    worker.Worker(
-        'edx_platform_worker4',
-        'anothersupersecurepassword',
-    ),
+{% endfor %}
 ]
 
 c['protocols'] = {
     'pb': {
-        'port': 9989,
+        'port': {{ buildbot_master_pb_port }},
     },
 }
 
@@ -119,7 +105,7 @@ config_test_factory.addStep(steps.ShellCommand(
     haltOnFailure=True,
 ))
 
-# Factories for testing the edx-platform repo
+# Factory for testing the edx-platform repo
 EDX_PLATFORM_VENV_DIR = util.Interpolate('%(prop:builddir)s/venv')
 EDX_PLATFORM_VENV_PYTHON = util.Interpolate('%s/bin/python', CONFIG_VENV_DIR)
 EDX_PLATFORM_VENV_ACTIVATE = util.Interpolate('%s/bin/activate',
@@ -259,44 +245,17 @@ edx_platform_test_factory.addStep(steps.ShellSequence(
     name='Run tests',
     env=EDX_PLATFORM_ENV,
     commands=[
+    {% for test in buildbot_master_edx_platform_tests %}
         util.ShellArg(
-            logfile='Run quality tests',
+            logfile='Run {{ test }} tests',
             command=util.Interpolate(
                 '. "%s" && TEST_SUITE="%s" ./scripts/generic-ci-tests.sh',
                 EDX_PLATFORM_VENV_ACTIVATE,
-                'quality',
+                '{{ test }}',
             ),
             haltOnFailure=True,
         ),
-        util.ShellArg(
-            logfile='Run lms-unit tests',
-            command=util.Interpolate(
-                '. "%s" && TEST_SUITE="%s" ./scripts/generic-ci-tests.sh',
-                EDX_PLATFORM_VENV_ACTIVATE,
-                'lms-unit',
-            ),
-            haltOnFailure=True,
-        ),
-        util.ShellArg(
-            logfile='Run cms-unit tests',
-            command=util.Interpolate(
-                '. "%s" && TEST_SUITE="%s" ./scripts/generic-ci-tests.sh',
-                EDX_PLATFORM_VENV_ACTIVATE,
-                'cms-unit',
-            ),
-            haltOnFailure=True,
-        ),
-        util.ShellArg(
-            logfile='Run commonlib-unit tests',
-            command=util.Interpolate(
-                '. "%s" && TEST_SUITE="%s" ./scripts/generic-ci-tests.sh',
-                EDX_PLATFORM_VENV_ACTIVATE,
-                'commonlib-unit',
-            ),
-            haltOnFailure=True,
-        ),
-        # TODO: Add support for js-unit, commonlib-js-unit, lms-acceptance,
-        # cms-acceptance, and bok-choy tests.
+    {% endfor %}
     ],
     haltOnFailure=True,
 ))
@@ -305,17 +264,18 @@ c['builders'] = []
 c['builders'].append(util.BuilderConfig(
     name='configuration-runtests',
     workernames=[
-        'configuration_worker1',
+    {% for worker in buildbot_common_configuration_workers %}
+        '{{ worker.name }}',
+    {% endfor %}
     ],
     factory=config_test_factory,
 ))
 c['builders'].append(util.BuilderConfig(
     name='edx-platform-runtests',
     workernames=[
-        'edx_platform_worker1',
-        'edx_platform_worker2',
-        'edx_platform_worker3',
-        'edx_platform_worker4',
+    {% for worker in buildbot_common_edx_platform_workers %}
+        '{{ worker.name }}',
+    {% endfor %}
     ],
     factory=edx_platform_test_factory,
 ))
@@ -326,11 +286,11 @@ c['services'] = []
 
 ####### PROJECT IDENTITY
 
-c['title'] = 'Lagunita'
-c['titleURL'] = 'https://lagunita.stanford.edu/'
-c['buildbotURL'] = 'http://localhost:8010/'
+c['title'] = '{{ buildbot_master_project_title }}'
+c['titleURL'] = '{{ buildbot_master_project_url }}'
+c['buildbotURL'] = '{{ buildbot_master_buildbot_url }}'
 c['www'] = dict(
-    port=8010,
+    port={{ buildbot_master_port }},
     plugins=dict(
         waterfall_view={},
         console_view={},
@@ -340,5 +300,5 @@ c['www'] = dict(
 ####### DB URL
 
 c['db'] = {
-    'db_url': 'sqlite:///state.sqlite',
+    'db_url': '{{ buildbot_master_db_url }}',
 }

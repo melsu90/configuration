@@ -12,3 +12,4 @@
 # 
 dependencies:
   - common
+  - buildbot_common

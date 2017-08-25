@@ -13,3 +13,4 @@
 dependencies:
   - common
   - jscover
+  - buildbot_common

@@ -17,4 +17,19 @@ buildbot_master_dir: "{{ COMMON_APP_DIR }}/buildbot_master"
 buildbot_master_venv: "{{ buildbot_master_dir }}/venv"
 buildbot_master_venv_bin: "{{ buildbot_master_venv }}/bin"
 buildbot_master_masterdir: "{{ buildbot_master_dir }}/master"
-buildbot_master_files: "{{ role_path }}/files"
+buildbot_master_templates: "{{ role_path }}/templates"
+
+# TODO: Add support for js-unit, commonlib-js-unit, lms-acceptance,
+# cms-acceptance, and bok-choy tests.
+buildbot_master_edx_platform_tests:
+  - quality
+  - lms-unit
+  - cms-unit
+  - commonlib-unit
+
+buildbot_master_pb_port: 9989
+buildbot_master_project_title: Lagunita
+buildbot_master_project_url: https://lagunita.stanford.edu
+buildbot_master_port: 8010
+buildbot_master_buildbot_url: "http://localhost:{{ buildbot_master_port }}/"
+buildbot_master_db_url: sqlite:///state.sqlite

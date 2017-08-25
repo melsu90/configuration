@@ -10,14 +10,14 @@
 #
 #
 # Tasks for role buildbot_master
-# 
+#
 # Overview:
-# 
+#
 #
 # Dependencies:
 #   - common
 #
-# 
+#
 # Example play:
 #
 #
@@ -63,9 +63,9 @@
   become: yes
   become_user: "{{ buildbot_master_user }}"
 
-- name: Copy in config file
-  copy:
-    src: "{{ buildbot_master_files }}/master.cfg"
+- name: Generate config file
+  template:
+    src: "{{ buildbot_master_templates }}/master.cfg.j2"
     dest: "{{ buildbot_master_masterdir }}/master.cfg"
     owner: "{{ buildbot_master_user }}"
     group: "{{ buildbot_master_group }}"
