@@ -50,6 +50,13 @@
   become: yes
   become_user: "{{ buildbot_master_user }}"
 
+- name: Install txrequests
+  pip:
+    name: txrequests
+    virtualenv: "{{ buildbot_master_venv }}"
+  become: yes
+  become_user: "{{ buildbot_master_user }}"
+
 - name: Install buildbot
   pip:
     name: 'buildbot[bundle]'

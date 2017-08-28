@@ -33,3 +33,14 @@ buildbot_master_project_url: https://lagunita.stanford.edu
 buildbot_master_port: 8010
 buildbot_master_buildbot_url: "http://localhost:{{ buildbot_master_port }}/"
 buildbot_master_db_url: sqlite:///state.sqlite
+
+buildbot_master_configuration_owner: Stanford-Online
+buildbot_master_configuration_url: "https://github.com/\
+  {{ buildbot_master_configuration_owner}}/configuration.git"
+buildbot_master_edx_platform_owner: Stanford-Online
+buildbot_master_edx_platform_url: "https://github.com/\
+  {{ buildbot_master_edx_platform_owner }}/edx-platform.git"
+
+buildbot_master_github_api_token: 'githubAPIToken'
+buildbot_master_github_clientid: 'githubClientID'
+buildbot_master_github_clientsecret: 'githubClientSecret'

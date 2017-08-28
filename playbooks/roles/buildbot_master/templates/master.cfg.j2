@@ -3,7 +3,8 @@
 
 # TODO: Split into multiple files (perhaps one for each build factory)
 
-from buildbot.plugins import changes, schedulers, steps, util, worker
+from buildbot.plugins import (changes, reporters, schedulers, steps, util,
+    worker)
 
 c = BuildmasterConfig = {}
 
@@ -27,35 +28,108 @@ c['protocols'] = {
 ####### CHANGESOURCES
 
 c['change_source'] = []
-# TODO: Add a changesource for the configuration and edx-platform repos
-
-# c['change_source'].append(changes.GitHubPullRequestPoller(
-#     owner='Stanford-Online',
-#     repo='edx-platform',
-# ))
+c['change_source'].append(changes.GitHubPullrequestPoller(
+    owner='{{ buildbot_master_configuration_owner }}',
+    repo='configuration',
+    branches=[
+        'master',
+    ],
+    pollAtLaunch=True,
+    token='{{ buildbot_master_github_api_token }}'
+))
+c['change_source'].append(changes.GitPoller(
+    repourl='{{ buildbot_master_configuration_url }}',
+    branches=[
+        'master',
+    ],
+    pollAtLaunch=True,
+))
+c['change_source'].append(changes.GitHubPullrequestPoller(
+    owner='{{ buildbot_master_edx_platform_owner }}',
+    repo='edx-platform',
+    branches=[
+        'master',
+    ],
+    pollAtLaunch=True,
+    token='{{ buildbot_master_github_api_token }}',
+))
+c['change_source'].append(changes.GitPoller(
+    repourl='{{ buildbot_master_edx_platform_url }}',
+    branches=[
+        'master',
+    ],
+    pollAtLaunch=True,
+))
 
 ####### SCHEDULERS
 
 c['schedulers'] = []
-# c['schedulers'].append(schedulers.AnyBranchScheduler(
-#     name='edx-platform-pr-runtests',
-#     treeStableTimer=600,
-#     change_filter=util.ChangeFilter(
-#         repository='git://github.com/Stanford-Online/edx-platform.git',
-#     ),
-#     builderNames=[
-#         'edx-platform-requirements',
-#     ],
-# ))
-
 c['schedulers'].append(schedulers.ForceScheduler(
-    name='configuration-runtests',
+    name='configuration-runtests-force',
+    builderNames=[
+        'configuration-runtests',
+    ],
+    codebases=[
+        util.CodebaseParameter(
+            codebase='',
+            name='Repository',
+            repository=util.StringParameter(
+                name='repository',
+                label='repository: ',
+                default='{{ buildbot_master_configuration_url }}',
+                required=False,
+            ),
+            branch=util.StringParameter(
+                name='branch',
+                label='branch: ',
+                default='master',
+                required=False,
+            ),
+            project='',
+        ),
+    ],
+))
+c['schedulers'].append(schedulers.AnyBranchScheduler(
+    name='configuration-runtests-automatic',
+    treeStableTimer=600,
+    change_filter=util.ChangeFilter(
+        repository='{{ buildbot_master_configuration_url }}',
+    ),
     builderNames=[
         'configuration-runtests',
     ],
 ))
 c['schedulers'].append(schedulers.ForceScheduler(
-    name='edx-platform-runtests',
+    name='edx-platform-runtests-force',
+    builderNames=[
+        'edx-platform-runtests',
+    ],
+    codebases=[
+        util.CodebaseParameter(
+            codebase='',
+            name='Repository',
+            repository=util.StringParameter(
+                name='repository',
+                label='repository: ',
+                default='{{ buildbot_master_edx_platform_url }}',
+                required=False,
+            ),
+            branch=util.StringParameter(
+                name='branch',
+                label='branch: ',
+                default='master',
+                required=False,
+            ),
+            project='',
+        ),
+    ],
+))
+c['schedulers'].append(schedulers.AnyBranchScheduler(
+    name='edx-platform-runtests-automatic',
+    treeStableTimer=600,
+    change_filter=util.ChangeFilter(
+        repository='{{ buildbot_master_edx_platform_url }}',
+    ),
     builderNames=[
         'edx-platform-runtests',
     ],
@@ -70,9 +144,9 @@ CONFIG_VENV_DIR = util.Interpolate('%(prop:builddir)s/venv')
 CONFIG_VENV_PYTHON = util.Interpolate('%s/bin/python', CONFIG_VENV_DIR)
 CONFIG_VENV_ACTIVATE = util.Interpolate('%s/bin/activate', CONFIG_VENV_DIR)
 
-config_test_factory.addStep(steps.Git(
+config_test_factory.addStep(steps.GitHub(
     name='Clone git repo',
-    repourl='git://github.com/Stanford-Online/configuration.git',
+    repourl='{{ buildbot_master_configuration_url }}',
     mode='incremental',
     haltOnFailure=True,
 ))
@@ -112,11 +186,9 @@ EDX_PLATFORM_VENV_ACTIVATE = util.Interpolate('%s/bin/activate',
                                               CONFIG_VENV_DIR)
 EDX_PLATFORM_GEM_HOME = util.Interpolate('%(prop:builddir)s/.gem')
 EDX_PLATFORM_GEM_BIN = util.Interpolate('%s/bin', EDX_PLATFORM_GEM_HOME)
-
 EDX_PLATFORM_NODE_BIN = util.Interpolate(
     '%(prop:builddir)s/build/node_modules/.bin',
 )
-
 EDX_PLATFORM_ENV = {
     'PYLINT_THRESHOLD': '4900',
     'JSHINT_THRESHOLD': '9080',
@@ -129,10 +201,9 @@ EDX_PLATFORM_ENV = {
 }
 
 edx_platform_test_factory = util.BuildFactory()
-edx_platform_test_factory.addStep(steps.Git(
+edx_platform_test_factory.addStep(steps.GitHub(
     name='Clone git repo',
-    repourl='git://github.com/jspayd/edx-platform.git',
-    branch='buildbot',
+    repourl=util.Property('repository'),
     mode='incremental',
     haltOnFailure=True,
 ))
@@ -283,6 +354,11 @@ c['builders'].append(util.BuilderConfig(
 ####### BUILDBOT SERVICES
 
 c['services'] = []
+c['services'].append(reporters.GitHubStatusPush(
+    token='{{ buildbot_master_github_api_token }}',
+    startDescription='Testing started.',
+    endDescription='Testing done.',
+))
 
 ####### PROJECT IDENTITY
 
@@ -294,6 +370,10 @@ c['www'] = dict(
     plugins=dict(
         waterfall_view={},
         console_view={},
+    ),
+    'auth': util.GitHubAuth(
+        '{{ buildbot_master_github_clientid }}',
+        '{{ buildbot_master_github_clientsecret }}',
     ),
 )
 
