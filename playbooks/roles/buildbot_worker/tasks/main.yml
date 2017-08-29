@@ -1,71 +1,43 @@
 ---
-#
-# edX Configuration
-#
-# github:     https://github.com/edx/configuration
-# wiki:       https://github.com/edx/configuration/wiki
-# code style: https://github.com/edx/configuration/wiki/Ansible-Coding-Conventions
-# license:    https://github.com/edx/configuration/blob/master/LICENSE.TXT
-#
-#
-#
-# Tasks for role buildbot_worker
-#
-# Overview:
-#
-#
-# Dependencies:
-#   - common
-#   - jscover
-#
-#
-# Example play:
-#
-#
-
-- name: Create buildbot_worker group
+- name: 'Create buildbot_worker group'
   group:
     name: "{{ buildbot_worker_group }}"
-    state: present
+    state: 'present'
 
-- name: Allow buildbot_worker group to have passwordless sudo
+- name: 'Allow buildbot_worker group to have passwordless sudo'
   lineinfile:
-    dest: /etc/sudoers
-    state: present
+    dest: '/etc/sudoers'
+    state: 'present'
     regexp: "^%{{ buildbot_worker_group }}"
     line: "%{{ buildbot_worker_group }} ALL=(ALL) NOPASSWD: ALL"
 
-- name: Add the buildbot_worker user to the group
+- name: 'Add the buildbot_worker user to the group'
   user:
     name: "{{ buildbot_worker_user }}"
     append: yes
     groups: "{{ buildbot_worker_group }}"
 
-- name: Make buildbot_worker directory
+- name: 'Make buildbot_worker directory'
   file:
     path: "{{ buildbot_worker_dir }}"
-    state: directory
+    state: 'directory'
     mode: 0755
     owner: "{{ buildbot_worker_user }}"
     group: "{{ buildbot_worker_group }}"
 
-# TODO: Create task for stopping workers
-# Currently, you can only reprovision while workers are stopped. To
-# reprovision, first either manually stop all workers or run 'vagrant halt'.
-
-- name: Create virtualenv for buildbot_worker
-  command: virtualenv --clear "{{ buildbot_worker_venv }}"
+- name: 'Create virtualenv for buildbot_worker'
+  command: "virtualenv --clear {{ buildbot_worker_venv }}"
   become: yes
   become_user: "{{ buildbot_worker_user }}"
 
-- name: Install buildbot-worker
+- name: 'Install buildbot-worker'
   pip:
     name: 'buildbot-worker'
     virtualenv: "{{ buildbot_worker_venv }}"
   become: yes
   become_user: "{{ buildbot_worker_user }}"
 
-- name: Create workers
+- name: 'Create workers'
   command: "{{ buildbot_worker_venv_bin }}/buildbot-worker create-worker \
     {{ buildbot_worker_dir }}/{{ item.name }} {{ item.host }} \
     {{ item.name }} {{ item.password }}"
@@ -73,7 +45,7 @@
   become: yes
   become_user: "{{ buildbot_worker_user }}"
 
-- name: Start configuration workers
+- name: 'Start configuration workers'
   command: "{{ buildbot_worker_venv_bin }}/buildbot-worker start \
     {{ buildbot_worker_dir }}/{{ item.name }}"
   with_items: "{{ buildbot_common_configuration_workers }}"
@@ -83,7 +55,7 @@
 # The -l flag is necessary to get npm to work properly. It can be added more
 # elegantly in Ansible 2.2 by using 'become_flags' (which should also allow
 # the use of the use of 'evironment' for setting the JSCOVER_JAR variable).
-- name: Start edx-platform workers
+- name: 'Start edx-platform workers'
   command: "su {{ buildbot_worker_user }} -l -c \
     \"JSCOVER_JAR=\\\"/usr/local/bin/JSCover-all-{{ jscover_version }}.jar\\\" \
     {{ buildbot_worker_venv_bin }}/buildbot-worker start \
@@ -91,14 +63,14 @@
   with_items: "{{ buildbot_common_edx_platform_workers }}"
   become: yes
 
-- name: Install configuration requirements
+- name: 'Install configuration requirements'
   apt:
     name: "{{ item }}"
     update_cache: yes
   with_items: "{{ buildbot_worker_configuration_requirements }}"
   become: yes
 
-- name: Install edx-platform requirements
+- name: 'Install edx-platform requirements'
   apt:
     name: "{{ item }}"
     update_cache: yes

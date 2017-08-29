@@ -1,10 +1,19 @@
 # -*- python -*-
 # vim: set filetype=python :
 
+# CHANGESOURCES listen for changes (in this case, on git repos), and then
+# communicate these changes to SCHEDULERS, which filter out changes
+# irrelevant to them and possibly schedule builds. Some SCHEDULERS do not
+# react to changes, but other events, like manual button presses or other
+# builds finishing. When a SCHEDULER kicks off a build, it puts the build
+# in the queue of some BUILDER. The BUILDER runs the build on a particular
+# WORKER, with steps specified by a BUILD FACTORY. A BUILDER may have a choice
+# of WORKERS to perform the build on, and multiple different builds can run on
+# the same worker at the same time.
+
 # TODO: Split into multiple files (perhaps one for each build factory)
 
-from buildbot.plugins import (changes, reporters, schedulers, steps, util,
-    worker)
+from buildbot.plugins import changes, reporters, schedulers, steps, util, worker
 
 c = BuildmasterConfig = {}
 
@@ -21,7 +30,7 @@ c['workers'] = [
 
 c['protocols'] = {
     'pb': {
-        'port': {{ buildbot_master_pb_port }},
+        'port': {{ BUILDBOT_MASTER_PB_PORT }},
     },
 }
 
@@ -29,32 +38,32 @@ c['protocols'] = {
 
 c['change_source'] = []
 c['change_source'].append(changes.GitHubPullrequestPoller(
-    owner='{{ buildbot_master_configuration_owner }}',
+    owner='{{ BUILDBOT_MASTER_CONFIGURATION_OWNER }}',
     repo='configuration',
     branches=[
         'master',
     ],
     pollAtLaunch=True,
-    token='{{ buildbot_master_github_api_token }}'
+    token='{{ BUILDBOT_MASTER_GITHUB_API_TOKEN }}'
 ))
 c['change_source'].append(changes.GitPoller(
-    repourl='{{ buildbot_master_configuration_url }}',
+    repourl='{{ BUILDBOT_MASTER_CONFIGURATION_URL }}',
     branches=[
         'master',
     ],
     pollAtLaunch=True,
 ))
 c['change_source'].append(changes.GitHubPullrequestPoller(
-    owner='{{ buildbot_master_edx_platform_owner }}',
+    owner='{{ BUILDBOT_MASTER_EDX_PLATFORM_OWNER }}',
     repo='edx-platform',
     branches=[
         'master',
     ],
     pollAtLaunch=True,
-    token='{{ buildbot_master_github_api_token }}',
+    token='{{ BUILDBOT_MASTER_GITHUB_API_TOKEN }}',
 ))
 c['change_source'].append(changes.GitPoller(
-    repourl='{{ buildbot_master_edx_platform_url }}',
+    repourl='{{ BUILDBOT_MASTER_EDX_PLATFORM_URL }}',
     branches=[
         'master',
     ],
@@ -75,13 +84,13 @@ c['schedulers'].append(schedulers.ForceScheduler(
             name='Repository',
             repository=util.StringParameter(
                 name='repository',
-                label='repository: ',
-                default='{{ buildbot_master_configuration_url }}',
+                label='repository:',
+                default='{{ BUILDBOT_MASTER_CONFIGURATION_URL }}',
                 required=False,
             ),
             branch=util.StringParameter(
                 name='branch',
-                label='branch: ',
+                label='branch:',
                 default='master',
                 required=False,
             ),
@@ -91,9 +100,9 @@ c['schedulers'].append(schedulers.ForceScheduler(
 ))
 c['schedulers'].append(schedulers.AnyBranchScheduler(
     name='configuration-runtests-automatic',
-    treeStableTimer=600,
+    treeStableTimer=60,
     change_filter=util.ChangeFilter(
-        repository='{{ buildbot_master_configuration_url }}',
+        repository='{{ BUILDBOT_MASTER_CONFIGURATION_URL }}',
     ),
     builderNames=[
         'configuration-runtests',
@@ -110,13 +119,13 @@ c['schedulers'].append(schedulers.ForceScheduler(
             name='Repository',
             repository=util.StringParameter(
                 name='repository',
-                label='repository: ',
-                default='{{ buildbot_master_edx_platform_url }}',
+                label='repository:',
+                default='{{ BUILDBOT_MASTER_EDX_PLATFORM_URL }}',
                 required=False,
             ),
             branch=util.StringParameter(
                 name='branch',
-                label='branch: ',
+                label='branch:',
                 default='master',
                 required=False,
             ),
@@ -126,9 +135,9 @@ c['schedulers'].append(schedulers.ForceScheduler(
 ))
 c['schedulers'].append(schedulers.AnyBranchScheduler(
     name='edx-platform-runtests-automatic',
-    treeStableTimer=600,
+    treeStableTimer=60,
     change_filter=util.ChangeFilter(
-        repository='{{ buildbot_master_edx_platform_url }}',
+        repository='{{ BUILDBOT_MASTER_EDX_PLATFORM_URL }}',
     ),
     builderNames=[
         'edx-platform-runtests',
@@ -146,8 +155,8 @@ CONFIG_VENV_ACTIVATE = util.Interpolate('%s/bin/activate', CONFIG_VENV_DIR)
 
 config_test_factory.addStep(steps.GitHub(
     name='Clone git repo',
-    repourl='{{ buildbot_master_configuration_url }}',
-    mode='incremental',
+    repourl=util.Property('repository'),
+    mode='full',
     haltOnFailure=True,
 ))
 config_test_factory.addStep(steps.ShellSequence(
@@ -190,11 +199,13 @@ EDX_PLATFORM_NODE_BIN = util.Interpolate(
     '%(prop:builddir)s/build/node_modules/.bin',
 )
 EDX_PLATFORM_ENV = {
+    # From scripts/all-tests.sh in edx-platform
     'PYLINT_THRESHOLD': '4900',
     'JSHINT_THRESHOLD': '9080',
     'GEM_HOME': EDX_PLATFORM_GEM_HOME,
     'PATH': [
         EDX_PLATFORM_GEM_BIN,
+        # From scripts/jenkins-common.sh in edx-platform
         EDX_PLATFORM_NODE_BIN,
         '${PATH}',
     ],
@@ -204,7 +215,7 @@ edx_platform_test_factory = util.BuildFactory()
 edx_platform_test_factory.addStep(steps.GitHub(
     name='Clone git repo',
     repourl=util.Property('repository'),
-    mode='incremental',
+    mode='full',
     haltOnFailure=True,
 ))
 edx_platform_test_factory.addStep(steps.ShellSequence(
@@ -315,8 +326,9 @@ edx_platform_test_factory.addStep(steps.ShellSequence(
 edx_platform_test_factory.addStep(steps.ShellSequence(
     name='Run tests',
     env=EDX_PLATFORM_ENV,
+    timeout=3600,
     commands=[
-    {% for test in buildbot_master_edx_platform_tests %}
+    {% for test in BUILDBOT_MASTER_EDX_PLATFORM_TESTS %}
         util.ShellArg(
             logfile='Run {{ test }} tests',
             command=util.Interpolate(
@@ -324,11 +336,11 @@ edx_platform_test_factory.addStep(steps.ShellSequence(
                 EDX_PLATFORM_VENV_ACTIVATE,
                 '{{ test }}',
             ),
-            haltOnFailure=True,
+            haltOnFailure=False,
         ),
     {% endfor %}
     ],
-    haltOnFailure=True,
+    haltOnFailure=False,
 ))
 
 c['builders'] = []
@@ -355,30 +367,30 @@ c['builders'].append(util.BuilderConfig(
 
 c['services'] = []
 c['services'].append(reporters.GitHubStatusPush(
-    token='{{ buildbot_master_github_api_token }}',
+    token='{{ BUILDBOT_MASTER_GITHUB_API_TOKEN }}',
     startDescription='Testing started.',
     endDescription='Testing done.',
 ))
 
 ####### PROJECT IDENTITY
 
-c['title'] = '{{ buildbot_master_project_title }}'
-c['titleURL'] = '{{ buildbot_master_project_url }}'
-c['buildbotURL'] = '{{ buildbot_master_buildbot_url }}'
+c['title'] = '{{ BUILDBOT_MASTER_PROJECT_TITLE }}'
+c['titleURL'] = '{{ BUILDBOT_MASTER_PROJECT_URL }}'
+c['buildbotURL'] = '{{ BUILDBOT_MASTER_BUILDBOT_URL }}'
 c['www'] = dict(
-    port={{ buildbot_master_port }},
+    port={{ BUILDBOT_MASTER_BUILDBOT_PORT }},
     plugins=dict(
         waterfall_view={},
         console_view={},
     ),
-    'auth': util.GitHubAuth(
-        '{{ buildbot_master_github_clientid }}',
-        '{{ buildbot_master_github_clientsecret }}',
+    auth=util.GitHubAuth(
+        '{{ BUILDBOT_MASTER_GITHUB_CLIENTID }}',
+        '{{ BUILDBOT_MASTER_GITHUB_CLIENTSECRET }}',
     ),
 )
 
 ####### DB URL
 
 c['db'] = {
-    'db_url': '{{ buildbot_master_db_url }}',
+    'db_url': '{{ BUILDBOT_MASTER_DB_URL }}',
 }

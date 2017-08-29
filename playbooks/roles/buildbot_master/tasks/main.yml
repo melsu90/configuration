@@ -1,76 +1,49 @@
 ---
-#
-# edX Configuration
-#
-# github:     https://github.com/edx/configuration
-# wiki:       https://github.com/edx/configuration/wiki
-# code style: https://github.com/edx/configuration/wiki/Ansible-Coding-Conventions
-# license:    https://github.com/edx/configuration/blob/master/LICENSE.TXT
-#
-#
-#
-# Tasks for role buildbot_master
-#
-# Overview:
-#
-#
-# Dependencies:
-#   - common
-#
-#
-# Example play:
-#
-#
-
-- name: Create buildbot_master group
+- name: 'Create buildbot_master group'
   group:
     name: "{{ buildbot_master_group }}"
-    state: present
+    state: 'present'
 
-- name: Add the buildbot_master user to the group
+- name: 'Add the buildbot_master user to the group'
   user:
     name: "{{ buildbot_master_user }}"
     append: yes
     groups: "{{ buildbot_master_group }}"
 
-- name: Make buildbot_master directory
+- name: 'Make buildbot_master directory'
   file:
     path: "{{ buildbot_master_dir }}"
-    state: directory
+    state: 'directory'
     owner: "{{ buildbot_master_user }}"
     group: "{{ buildbot_master_group }}"
     mode: 0755
 
-# TODO: Create task for stopping master if master exists
-# Currently, you can only reprovision while master is not running. To
-# reprovision, first either manually stop master or run 'vagrant halt'.
-
-- name: Create virtualenv for buildbot_master
-  command: virtualenv --clear "{{ buildbot_master_venv }}"
+- name: 'Create virtualenv for buildbot_master'
+  command: "virtualenv --clear {{ buildbot_master_venv }}"
   become: yes
   become_user: "{{ buildbot_master_user }}"
 
-- name: Install txrequests
+# txrequests allows Buildbot to communicate with GitHub
+- name: 'Install txrequests'
   pip:
-    name: txrequests
+    name: 'txrequests'
     virtualenv: "{{ buildbot_master_venv }}"
   become: yes
   become_user: "{{ buildbot_master_user }}"
 
-- name: Install buildbot
+- name: 'Install buildbot'
   pip:
     name: 'buildbot[bundle]'
     virtualenv: "{{ buildbot_master_venv }}"
   become: yes
   become_user: "{{ buildbot_master_user }}"
 
-- name: Create master
-  command: "{{ buildbot_master_venv_bin }}/buildbot create-master \
-    {{ buildbot_master_masterdir }}"
+- name: 'Create master'
+  command: "{{ buildbot_master_venv_bin }}/buildbot create-master {{ buildbot_master_masterdir }}"
   become: yes
   become_user: "{{ buildbot_master_user }}"
 
-- name: Generate config file
+- name: 'Generate config file'
   template:
     src: "{{ buildbot_master_templates }}/master.cfg.j2"
     dest: "{{ buildbot_master_masterdir }}/master.cfg"
@@ -78,13 +51,12 @@
     group: "{{ buildbot_master_group }}"
     mode: 0644
 
-- name: Delete sample config file
+- name: 'Delete sample config file'
   command: "rm {{ buildbot_master_masterdir }}/master.cfg.sample"
   become: yes
   become_user: "{{ buildbot_master_user }}"
 
-- name: Start master
-  command: "{{ buildbot_master_venv_bin }}/buildbot start \
-    {{ buildbot_master_masterdir }}"
+- name: 'Start master'
+  command: "{{ buildbot_master_venv_bin }}/buildbot start {{ buildbot_master_masterdir }}"
   become: yes
   become_user: "{{ buildbot_master_user }}"

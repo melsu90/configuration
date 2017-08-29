@@ -1,27 +1,16 @@
 ---
-#
-# edX Configuration
-#
-# github:     https://github.com/edx/configuration
-# wiki:       https://github.com/edx/configuration/wiki
-# code style: https://github.com/edx/configuration/wiki/Ansible-Coding-Conventions
-# license:    https://github.com/edx/configuration/blob/master/LICENSE.TXT
-#
-##
-# Defaults for role buildbot_worker
-#
-buildbot_worker_group: buildbot_worker
-buildbot_worker_user: buildbot_worker
+buildbot_worker_group: 'buildbot_worker'
+buildbot_worker_user: 'buildbot_worker'
 
 buildbot_worker_dir: "{{ COMMON_APP_DIR }}/buildbot_worker"
 buildbot_worker_venv: "{{ buildbot_worker_dir }}/venv"
 buildbot_worker_venv_bin: "{{ buildbot_worker_venv }}/bin"
 
 buildbot_worker_configuration_requirements:
-  - nodejs
-  - python-demjson
+  - 'nodejs'
+  - 'python-demjson'
 
 buildbot_worker_edx_platform_requirements:
-  - bundler
-  - gettext
-  - firefox=28.0+build2-0ubuntu2
+  - 'bundler'
+  - 'gettext'
+  - 'firefox=28.0+build2-0ubuntu2'

@@ -1,17 +1,6 @@
 ---
-#
-# edX Configuration
-#
-# github:     https://github.com/edx/configuration
-# wiki:       https://github.com/edx/configuration/wiki
-# code style: https://github.com/edx/configuration/wiki/Ansible-Coding-Conventions
-# license:    https://github.com/edx/configuration/blob/master/LICENSE.TXT
-#
-##
-# Defaults for role buildbot_master
-#
-buildbot_master_group: buildbot_master
-buildbot_master_user: buildbot_master
+buildbot_master_group: 'buildbot_master'
+buildbot_master_user: 'buildbot_master'
 
 buildbot_master_dir: "{{ COMMON_APP_DIR }}/buildbot_master"
 buildbot_master_venv: "{{ buildbot_master_dir }}/venv"
@@ -21,26 +10,26 @@ buildbot_master_templates: "{{ role_path }}/templates"
 
 # TODO: Add support for js-unit, commonlib-js-unit, lms-acceptance,
 # cms-acceptance, and bok-choy tests.
-buildbot_master_edx_platform_tests:
-  - quality
-  - lms-unit
-  - cms-unit
-  - commonlib-unit
+BUILDBOT_MASTER_EDX_PLATFORM_TESTS:
+  - 'quality'
+  - 'lms-unit'
+  - 'cms-unit'
+  - 'commonlib-unit'
 
-buildbot_master_pb_port: 9989
-buildbot_master_project_title: Lagunita
-buildbot_master_project_url: https://lagunita.stanford.edu
-buildbot_master_port: 8010
-buildbot_master_buildbot_url: "http://localhost:{{ buildbot_master_port }}/"
-buildbot_master_db_url: sqlite:///state.sqlite
+BUILDBOT_MASTER_PB_PORT: 9989
+BUILDBOT_MASTER_PROJECT_TITLE: 'Lagunita'
+BUILDBOT_MASTER_PROJECT_URL: 'https://lagunita.stanford.edu'
+BUILDBOT_MASTER_BUILDBOT_PROTOCOL: 'http'
+BUILDBOT_MASTER_BUILDBOT_DOMAIN: 'localhost'
+BUILDBOT_MASTER_BUILDBOT_PORT: 8010
+BUILDBOT_MASTER_BUILDBOT_URL: "{{ BUILDBOT_MASTER_BUILDBOT_PROTOCOL }}://{{ BUILDBOT_MASTER_BUILDBOT_DOMAIN }}:{{ BUILDBOT_MASTER_BUILDBOT_PORT }}/"
+BUILDBOT_MASTER_DB_URL: 'sqlite:///state.sqlite'
 
-buildbot_master_configuration_owner: Stanford-Online
-buildbot_master_configuration_url: "https://github.com/\
-  {{ buildbot_master_configuration_owner}}/configuration.git"
-buildbot_master_edx_platform_owner: Stanford-Online
-buildbot_master_edx_platform_url: "https://github.com/\
-  {{ buildbot_master_edx_platform_owner }}/edx-platform.git"
+BUILDBOT_MASTER_CONFIGURATION_OWNER: 'Stanford-Online'
+BUILDBOT_MASTER_CONFIGURATION_URL: "https://github.com/{{ BUILDBOT_MASTER_CONFIGURATION_OWNER}}/configuration.git"
+BUILDBOT_MASTER_EDX_PLATFORM_OWNER: 'Stanford-Online'
+BUILDBOT_MASTER_EDX_PLATFORM_URL: "https://github.com/{{ BUILDBOT_MASTER_EDX_PLATFORM_OWNER }}/edx-platform.git"
 
-buildbot_master_github_api_token: 'githubAPIToken'
-buildbot_master_github_clientid: 'githubClientID'
-buildbot_master_github_clientsecret: 'githubClientSecret'
+BUILDBOT_MASTER_GITHUB_API_TOKEN: 'githubAPIToken'
+BUILDBOT_MASTER_GITHUB_CLIENTID: 'githubClientID'
+BUILDBOT_MASTER_GITHUB_CLIENTSECRET: 'githubClientSecret'
