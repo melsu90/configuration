@@ -43,13 +43,22 @@
   become: yes
   become_user: "{{ buildbot_master_user }}"
 
-- name: 'Generate config file'
+- name: 'Create openedx_buildbot directory for config files'
+  file:
+    path: "{{ buildbot_master_masterdir }}/openedx_buildbot"
+    state: 'directory'
+    owner: "{{ buildbot_master_user }}"
+    group: "{{ buildbot_master_group }}"
+    mode: 0755
+
+- name: 'Generate config files'
   template:
-    src: "{{ buildbot_master_templates }}/master.cfg.j2"
-    dest: "{{ buildbot_master_masterdir }}/master.cfg"
+    src: "{{ buildbot_master_templates }}/{{ item }}.j2"
+    dest: "{{ buildbot_master_masterdir }}/{{ item }}"
     owner: "{{ buildbot_master_user }}"
     group: "{{ buildbot_master_group }}"
     mode: 0644
+  with_items: "{{ buildbot_master_config_files }}"
 
 - name: 'Delete sample config file'
   command: "rm {{ buildbot_master_masterdir }}/master.cfg.sample"

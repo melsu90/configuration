@@ -7,6 +7,11 @@ buildbot_master_venv: "{{ buildbot_master_dir }}/venv"
 buildbot_master_venv_bin: "{{ buildbot_master_venv }}/bin"
 buildbot_master_masterdir: "{{ buildbot_master_dir }}/master"
 buildbot_master_templates: "{{ role_path }}/templates"
+buildbot_master_config_files:
+  - 'master.cfg'
+  - 'openedx_buildbot/configuration.py'
+  - 'openedx_buildbot/edxapp.py'
+  - 'openedx_buildbot/__init__.py'
 
 # TODO: Add support for js-unit, commonlib-js-unit, lms-acceptance,
 # cms-acceptance, and bok-choy tests.

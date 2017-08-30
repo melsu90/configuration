@@ -11,9 +11,8 @@
 # of WORKERS to perform the build on, and multiple different builds can run on
 # the same worker at the same time.
 
-# TODO: Split into multiple files (perhaps one for each build factory)
-
-from buildbot.plugins import changes, reporters, schedulers, steps, util, worker
+from buildbot.plugins import reporters, util, worker
+from openedx_buildbot import configuration, edxapp
 
 c = BuildmasterConfig = {}
 
@@ -36,341 +35,38 @@ c['protocols'] = {
 
 ####### CHANGESOURCES
 
-c['change_source'] = []
-c['change_source'].append(changes.GitHubPullrequestPoller(
-    owner='{{ BUILDBOT_MASTER_CONFIGURATION_OWNER }}',
-    repo='configuration',
-    branches=[
-        'master',
-    ],
-    pollAtLaunch=True,
-    token='{{ BUILDBOT_MASTER_GITHUB_API_TOKEN }}'
-))
-c['change_source'].append(changes.GitPoller(
-    repourl='{{ BUILDBOT_MASTER_CONFIGURATION_URL }}',
-    branches=[
-        'master',
-    ],
-    pollAtLaunch=True,
-))
-c['change_source'].append(changes.GitHubPullrequestPoller(
-    owner='{{ BUILDBOT_MASTER_EDX_PLATFORM_OWNER }}',
-    repo='edx-platform',
-    branches=[
-        'master',
-    ],
-    pollAtLaunch=True,
-    token='{{ BUILDBOT_MASTER_GITHUB_API_TOKEN }}',
-))
-c['change_source'].append(changes.GitPoller(
-    repourl='{{ BUILDBOT_MASTER_EDX_PLATFORM_URL }}',
-    branches=[
-        'master',
-    ],
-    pollAtLaunch=True,
-))
+c['change_source'] = [
+    configuration.get_github_pr_poller(),
+    configuration.get_git_poller(),
+    edxapp.get_github_pr_poller(),
+    edxapp.get_git_poller(),
+]
 
 ####### SCHEDULERS
 
-c['schedulers'] = []
-c['schedulers'].append(schedulers.ForceScheduler(
-    name='configuration-runtests-force',
-    builderNames=[
-        'configuration-runtests',
-    ],
-    codebases=[
-        util.CodebaseParameter(
-            codebase='',
-            name='Repository',
-            repository=util.StringParameter(
-                name='repository',
-                label='repository:',
-                default='{{ BUILDBOT_MASTER_CONFIGURATION_URL }}',
-                required=False,
-            ),
-            branch=util.StringParameter(
-                name='branch',
-                label='branch:',
-                default='master',
-                required=False,
-            ),
-            project='',
-        ),
-    ],
-))
-c['schedulers'].append(schedulers.AnyBranchScheduler(
-    name='configuration-runtests-automatic',
-    treeStableTimer=60,
-    change_filter=util.ChangeFilter(
-        repository='{{ BUILDBOT_MASTER_CONFIGURATION_URL }}',
-    ),
-    builderNames=[
-        'configuration-runtests',
-    ],
-))
-c['schedulers'].append(schedulers.ForceScheduler(
-    name='edx-platform-runtests-force',
-    builderNames=[
-        'edx-platform-runtests',
-    ],
-    codebases=[
-        util.CodebaseParameter(
-            codebase='',
-            name='Repository',
-            repository=util.StringParameter(
-                name='repository',
-                label='repository:',
-                default='{{ BUILDBOT_MASTER_EDX_PLATFORM_URL }}',
-                required=False,
-            ),
-            branch=util.StringParameter(
-                name='branch',
-                label='branch:',
-                default='master',
-                required=False,
-            ),
-            project='',
-        ),
-    ],
-))
-c['schedulers'].append(schedulers.AnyBranchScheduler(
-    name='edx-platform-runtests-automatic',
-    treeStableTimer=60,
-    change_filter=util.ChangeFilter(
-        repository='{{ BUILDBOT_MASTER_EDX_PLATFORM_URL }}',
-    ),
-    builderNames=[
-        'edx-platform-runtests',
-    ],
-))
+c['schedulers'] = [
+    configuration.get_test_force_scheduler(),
+    configuration.get_test_any_branch_scheduler(),
+    edxapp.get_test_force_scheduler(),
+    edxapp.get_test_any_branch_scheduler(),
+]
 
 ####### BUILDERS
 
-# Factory for testing configuration repo
-config_test_factory = util.BuildFactory()
-
-CONFIG_VENV_DIR = util.Interpolate('%(prop:builddir)s/venv')
-CONFIG_VENV_PYTHON = util.Interpolate('%s/bin/python', CONFIG_VENV_DIR)
-CONFIG_VENV_ACTIVATE = util.Interpolate('%s/bin/activate', CONFIG_VENV_DIR)
-
-config_test_factory.addStep(steps.GitHub(
-    name='Clone git repo',
-    repourl=util.Property('repository'),
-    mode='full',
-    haltOnFailure=True,
-))
-config_test_factory.addStep(steps.ShellSequence(
-    name='Install requirements',
-    commands=[
-        util.ShellArg(
-            logfile='Create virtualenv',
-            command=['virtualenv', '--clear', CONFIG_VENV_DIR],
-            haltOnFailure=True,
-        ),
-        util.ShellArg(
-            logfile='Install requirements',
-            command=[CONFIG_VENV_PYTHON, '-m', 'pip', 'install',
-                     '--allow-all-external', '-r', 'requirements.txt'],
-            haltOnFailure=True,
-        ),
-        util.ShellArg(
-            logfile='Install demjson',
-            command=[CONFIG_VENV_PYTHON, '-m', 'pip', 'install',
-                     '--allow-all-external', 'demjson'],
-            haltOnFailure=True,
-        ),
-    ],
-    haltOnFailure=True,
-))
-config_test_factory.addStep(steps.ShellCommand(
-    name='Run tests',
-    command=util.Interpolate('. "%s" && make test', CONFIG_VENV_ACTIVATE),
-    haltOnFailure=True,
-))
-
-# Factory for testing the edx-platform repo
-EDX_PLATFORM_VENV_DIR = util.Interpolate('%(prop:builddir)s/venv')
-EDX_PLATFORM_VENV_PYTHON = util.Interpolate('%s/bin/python', CONFIG_VENV_DIR)
-EDX_PLATFORM_VENV_ACTIVATE = util.Interpolate('%s/bin/activate',
-                                              CONFIG_VENV_DIR)
-EDX_PLATFORM_GEM_HOME = util.Interpolate('%(prop:builddir)s/.gem')
-EDX_PLATFORM_GEM_BIN = util.Interpolate('%s/bin', EDX_PLATFORM_GEM_HOME)
-EDX_PLATFORM_NODE_BIN = util.Interpolate(
-    '%(prop:builddir)s/build/node_modules/.bin',
-)
-EDX_PLATFORM_ENV = {
-    # From scripts/all-tests.sh in edx-platform
-    'PYLINT_THRESHOLD': '4900',
-    'JSHINT_THRESHOLD': '9080',
-    'GEM_HOME': EDX_PLATFORM_GEM_HOME,
-    'PATH': [
-        EDX_PLATFORM_GEM_BIN,
-        # From scripts/jenkins-common.sh in edx-platform
-        EDX_PLATFORM_NODE_BIN,
-        '${PATH}',
-    ],
-}
-
-edx_platform_test_factory = util.BuildFactory()
-edx_platform_test_factory.addStep(steps.GitHub(
-    name='Clone git repo',
-    repourl=util.Property('repository'),
-    mode='full',
-    haltOnFailure=True,
-))
-edx_platform_test_factory.addStep(steps.ShellSequence(
-    name='Install requirements',
-    env=EDX_PLATFORM_ENV,
-    timeout=3600,
-    commands=[
-        util.ShellArg(
-            logfile='Install system requirements',
-            command=['scripts/install-system-req.sh'],
-            haltOnFailure=True,
-        ),
-        util.ShellArg(
-            logfile='Create virtualenv',
-            command=['virtualenv', '--clear', EDX_PLATFORM_VENV_DIR],
-            haltOnFailure=True,
-        ),
-        util.ShellArg(
-            logfile='Make .gem directory',
-            command=['mkdir', '-p', EDX_PLATFORM_GEM_HOME],
-            haltOnFailure=True,
-        ),
-        util.ShellArg(
-            logfile='Install npm packages',
-            command=['npm', 'install'],
-            haltOnFailure=True,
-        ),
-        util.ShellArg(
-            logfile='Install bundler packages',
-            command=['bundle', 'install'],
-            haltOnFailure=True,
-        ),
-        util.ShellArg(
-            logfile='Remove stray gems',
-            command=['bundle', 'clean', '--force'],
-            haltOnFailure=False,
-        ),
-        util.ShellArg(
-            logfile='Install pre requirements',
-            command=[EDX_PLATFORM_VENV_PYTHON, '-m', 'pip', 'install',
-                     '--exists-action', 'w', '-r',
-                     'requirements/edx/pre.txt'],
-            haltOnFailure=True,
-        ),
-        util.ShellArg(
-            logfile='Install github requirements',
-            command=[EDX_PLATFORM_VENV_PYTHON, '-m', 'pip', 'install',
-                     '--exists-action', 'w', '-r',
-                     'requirements/edx/github.txt'],
-            haltOnFailure=True,
-        ),
-        util.ShellArg(
-            logfile='Install stanford requirements',
-            command=[EDX_PLATFORM_VENV_PYTHON, '-m', 'pip', 'install',
-                     '--exists-action', 'w', '-r',
-                     'requirements/edx/stanford.txt'],
-            haltOnFailure=True,
-        ),
-        util.ShellArg(
-            logfile='Install local requirements',
-            command=[EDX_PLATFORM_VENV_PYTHON, '-m', 'pip', 'install',
-                     '--exists-action', 'w', '-r',
-                     'requirements/edx/local.txt'],
-            haltOnFailure=True,
-        ),
-        util.ShellArg(
-            logfile='Install base requirements',
-            command=[EDX_PLATFORM_VENV_PYTHON, '-m', 'pip', 'install',
-                     '--exists-action', 'w', '-r',
-                     'requirements/edx/base.txt'],
-            haltOnFailure=True,
-        ),
-        util.ShellArg(
-            logfile='Install paver requirements',
-            command=[EDX_PLATFORM_VENV_PYTHON, '-m', 'pip', 'install',
-                     '--exists-action', 'w', '-r',
-                     'requirements/edx/paver.txt'],
-            haltOnFailure=True,
-        ),
-        util.ShellArg(
-            logfile='Install post requirements',
-            command=util.Interpolate(
-                (
-                    'if [ -e requirements/edx/post.txt ]; then '
-                    '. "%s" ; '
-                    'pip install --exists-action w -r '
-                    'requirements/edx/post.txt ; '
-                    'fi'
-                ),
-                EDX_PLATFORM_VENV_ACTIVATE,
-            ),
-            haltOnFailure=True,
-        ),
-        util.ShellArg(
-            logfile='Install coveralls',
-            command=[EDX_PLATFORM_VENV_PYTHON, '-m', 'pip', 'install',
-                     'coveralls==1.0'],
-            haltOnFailure=True,
-        ),
-        util.ShellArg(
-            logfile='List pip packages',
-            command=[EDX_PLATFORM_VENV_PYTHON, '-m', 'pip', 'freeze'],
-            haltOnFailure=True,
-        ),
-    ],
-    haltOnFailure=True,
-))
-edx_platform_test_factory.addStep(steps.ShellSequence(
-    name='Run tests',
-    env=EDX_PLATFORM_ENV,
-    timeout=3600,
-    commands=[
-    {% for test in BUILDBOT_MASTER_EDX_PLATFORM_TESTS %}
-        util.ShellArg(
-            logfile='Run {{ test }} tests',
-            command=util.Interpolate(
-                '. "%s" && TEST_SUITE="%s" ./scripts/generic-ci-tests.sh',
-                EDX_PLATFORM_VENV_ACTIVATE,
-                '{{ test }}',
-            ),
-            haltOnFailure=False,
-        ),
-    {% endfor %}
-    ],
-    haltOnFailure=False,
-))
-
-c['builders'] = []
-c['builders'].append(util.BuilderConfig(
-    name='configuration-runtests',
-    workernames=[
-    {% for worker in buildbot_common_configuration_workers %}
-        '{{ worker.name }}',
-    {% endfor %}
-    ],
-    factory=config_test_factory,
-))
-c['builders'].append(util.BuilderConfig(
-    name='edx-platform-runtests',
-    workernames=[
-    {% for worker in buildbot_common_edx_platform_workers %}
-        '{{ worker.name }}',
-    {% endfor %}
-    ],
-    factory=edx_platform_test_factory,
-))
+c['builders'] = [
+    configuration.get_test_builder(),
+    edxapp.get_test_builder(),
+]
 
 ####### BUILDBOT SERVICES
 
-c['services'] = []
-c['services'].append(reporters.GitHubStatusPush(
-    token='{{ BUILDBOT_MASTER_GITHUB_API_TOKEN }}',
-    startDescription='Testing started.',
-    endDescription='Testing done.',
-))
+c['services'] = [
+    reporters.GitHubStatusPush(
+        token='{{ BUILDBOT_MASTER_GITHUB_API_TOKEN }}',
+        startDescription='Testing started.',
+        endDescription='Testing done.',
+    ),
+]
 
 ####### PROJECT IDENTITY
 
