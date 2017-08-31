@@ -13,4 +13,3 @@ buildbot_worker_configuration_requirements:
 buildbot_worker_edx_platform_requirements:
   - 'bundler'
   - 'gettext'
-  - 'firefox=28.0+build2-0ubuntu2'
