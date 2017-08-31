@@ -73,17 +73,50 @@ c['services'] = [
 c['title'] = '{{ BUILDBOT_MASTER_PROJECT_TITLE }}'
 c['titleURL'] = '{{ BUILDBOT_MASTER_PROJECT_URL }}'
 c['buildbotURL'] = '{{ BUILDBOT_MASTER_BUILDBOT_URL }}'
-c['www'] = dict(
-    port={{ BUILDBOT_MASTER_BUILDBOT_PORT }},
-    plugins=dict(
-        waterfall_view={},
-        console_view={},
-    ),
-    auth=util.GitHubAuth(
+c['www'] = {
+    'port': {{ BUILDBOT_MASTER_BUILDBOT_PORT }},
+    'plugins': {
+        'waterfall_view': {},
+        'console_view': {},
+    },
+{% if BUILDBOT_MASTER_GITHUB_AUTH %}
+    'auth': util.GitHubAuth(
         '{{ BUILDBOT_MASTER_GITHUB_CLIENTID }}',
         '{{ BUILDBOT_MASTER_GITHUB_CLIENTSECRET }}',
     ),
-)
+    'authz': util.Authz(
+        allowRules=[
+            util.AnyEndpointMatcher(role='{{ BUILDBOT_MASTER_GITHUB_GROUP }}'),
+        ],
+        roleMatchers=[
+            util.RolesFromGroups(groupPrefix=''),
+        ],
+    )
+{% else %}
+    'auth': util.UserPasswordAuth({
+    {% for user in BUILDBOT_MASTER_USERS %}
+        '{{ user.name }}': '{{ user.password }}',
+    {% endfor %}
+    }),
+    'authz': util.Authz(
+        allowRules=[
+            util.AnyEndpointMatcher(role='contributors'),
+        ],
+        roleMatchers=[
+            util.RolesFromUsername(
+                roles=[
+                    'contributors',
+                ],
+                usernames=[
+                {% for user in BUILDBOT_MASTER_USERS %}
+                    '{{ user.name }}',
+                {% endfor %}
+                ],
+            ),
+        ],
+    ),
+{% endif %}
+}
 
 ####### DB URL
 
