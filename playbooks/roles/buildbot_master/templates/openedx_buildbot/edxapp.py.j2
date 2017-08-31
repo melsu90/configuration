@@ -22,6 +22,7 @@ ENV = {
         '${PATH}',
     ],
 }
+system_req_lock = util.MasterLock('system-req')
 
 def get_github_pr_poller():
     """
@@ -105,16 +106,20 @@ def get_test_factory():
         mode='full',
         haltOnFailure=True,
     ))
+    factory.addStep(steps.ShellCommand(
+        name='Install system requirements',
+        env=ENV,
+        command=['scripts/install-system-req.sh'],
+        locks=[
+            system_req_lock.access('exclusive'),
+        ],
+        haltOnFailure=True,
+    ))
     factory.addStep(steps.ShellSequence(
-        name='Install requirements',
+        name='Install python, npm, and ruby requirements',
         env=ENV,
         timeout=3600,
         commands=[
-            util.ShellArg(
-                logfile='Install system requirements',
-                command=['scripts/install-system-req.sh'],
-                haltOnFailure=True,
-            ),
             util.ShellArg(
                 logfile='Create virtualenv',
                 command=['virtualenv', '--clear', VENV_DIR],
