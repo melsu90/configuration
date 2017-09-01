@@ -14,6 +14,7 @@ ENV = {
     # From scripts/all-tests.sh in edx-platform
     'PYLINT_THRESHOLD': '4900',
     'JSHINT_THRESHOLD': '9080',
+    'DISPLAY': '{{ BUILDBOT_MASTER_X11_DISPLAY }}',
     'GEM_HOME': GEM_HOME,
     'PATH': [
         GEM_BIN,
