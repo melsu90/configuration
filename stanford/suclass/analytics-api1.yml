@@ -1,6 +1,6 @@
 #!/usr/bin/env ansible-playbook
 ---
-- include: ../playbooks/scheduler.yml
+- include: ../playbooks/analytics-api.yml
   vars:
     CLUSTER_INSTANCE_TYPE: t2.medium
     CLUSTER_NUMBER: 1
