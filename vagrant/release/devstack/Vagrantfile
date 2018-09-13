@@ -27,6 +27,7 @@ VERSION_VARS = [
 MOUNT_DIRS = {
   :edx_platform => {:repo => "edx-platform", :local => "/edx/app/edxapp/edx-platform", :owner => "edxapp"},
   :themes => {:repo => "themes", :local => "/edx/app/edxapp/themes", :owner => "edxapp"},
+  :comprehensive_themes => {:repo => "comprehensive_themes", :local => "/edx/app/edxapp/comprehensive_themes", :owner => "edxapp"},
   :forum => {:repo => "cs_comments_service", :local => "/edx/app/forum/cs_comments_service", :owner => "forum"},
   :ecommerce => {:repo => "ecommerce", :local => "/edx/app/ecommerce/ecommerce", :owner => "ecommerce"},
   :ecommerce_worker => {:repo => "ecommerce-worker", :local => "/edx/app/ecommerce_worker/ecommerce_worker", :owner => "ecommerce_worker"},
@@ -89,6 +90,9 @@ cd /edx/app/edx_ansible/edx_ansible/playbooks
 
 EXTRA_VARS="#{extra_vars_lines}"
 CONFIG_VER="#{ENV['CONFIGURATION_VERSION'] || openedx_release || 'master'}"
+
+apt-key del 69464050
+apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 69464050
 
 ansible-playbook -i localhost, -c local run_role.yml -e role=edx_ansible -e configuration_version=$CONFIG_VER $EXTRA_VARS
 ansible-playbook -i localhost, -c local vagrant-devstack.yml -e configuration_version=$CONFIG_VER $EXTRA_VARS

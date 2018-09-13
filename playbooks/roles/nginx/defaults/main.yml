@@ -30,7 +30,7 @@ NGINX_REDIRECT_TO_HTTPS: False
 
 # This variable is only checked if NGINX_REDIRECT_TO_HTTPS is true
 # It should be set to one of !!null, "scheme" or "forward_for_proto"
-NGINX_HTTPS_REDIRECT_STRATEGY: "scheme"
+NGINX_HTTPS_REDIRECT_STRATEGY: 'forward_for_proto'
 
 NGINX_SSL_CERTIFICATE: 'ssl-cert-snakeoil.pem'
 NGINX_SSL_KEY: 'ssl-cert-snakeoil.key'
@@ -128,6 +128,7 @@ nginx_cfg:
 NGINX_ROBOT_RULES: [ ]
 NGINX_EDXAPP_EMBARGO_CIDRS: []
 NGINX_EDXAPP_COURSE_SUBDOMAINS: {}
+NGINX_EDXAPP_COURSE_SUBDOMAINS2: {}
 NGINX_P3P_MESSAGE: 'CP="Open edX does not have a P3P policy."'
 
 COMMON_ENABLE_BASIC_AUTH: False

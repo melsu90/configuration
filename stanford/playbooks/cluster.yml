@@ -1,0 +1,23 @@
+#!/usr/bin/env ansible-playbook
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  tasks:
+    - include_vars: "{{ COMMON_DEPLOYMENT_DIR }}/common.yaml"
+    - include_vars: "{{ item }}"
+      with_first_found:
+        - files:
+          - "{{ COMMON_DEPLOYMENT_DIR }}/{{ CLUSTER_NAME }}.yml"
+          skip: true
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  roles:
+    - role: cluster
+- name: Bootstrap instance(s)
+  hosts: cluster_group_launched
+  gather_facts: no
+  become: True
+  roles:
+    - python

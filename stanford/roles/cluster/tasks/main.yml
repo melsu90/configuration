@@ -1,0 +1,117 @@
+---
+- debug: var=ANALYTICS_MYSQL_PASSWORD
+- debug: var=DEPLOYMENT_SSL_CERTIFICATE_ID
+- debug: var=CLUSTER_SUBNET
+- debug: var=CLUSTER_SUBNET_TAGS
+- name: Lookup/create subnet
+  ec2_vpc_subnet:
+    state: present
+    vpc_id: "{{ DEPLOYMENT_VPC_ID }}"
+    cidr: "{{ CLUSTER_SUBNET.cidr }}"
+    az: "{{ CLUSTER_SUBNET.zone }}"
+    resource_tags: "{{ CLUSTER_SUBNET_TAGS }}"
+  register: cluster_subnet
+- name:  Set Public Subnet ID
+  set_fact:
+    CLUSTER_SUBNET_ID: "{{ cluster_subnet.subnet.id }}"
+- debug: var=cluster_subnet
+
+- name: Create private route table
+  ec2_vpc_route_table:
+    vpc_id: "{{ DEPLOYMENT_VPC_ID }}"
+    region: "{{ DEPLOYMENT_REGION }}"
+    purge_routes: false
+    purge_subnets: false
+    routes:
+      - dest: 0.0.0.0/0
+        gateway_id: "{{ DEPLOYMENT_NAT_GATEWAY_ID }}"
+      - dest: "{{ DEPLOYMENT_CIDR }}"
+        gateway_id: local
+    subnets:
+      - "{{ CLUSTER_SUBNET_ID }}"
+    tags:
+      Deployment: "{{ COMMON_DEPLOYMENT }}"
+      Network: Private
+      Name: "{{ COMMON_DEPLOYMENT }}-route-private-{{ DEPLOYMENT_NUMBER }}"
+      Number: "{{ DEPLOYMENT_NUMBER }}"
+  register: deployment_route_private1
+  when: CLUSTER_NETWORK != 'public'
+- debug: var=deployment_route_private1
+  when: CLUSTER_NETWORK != 'public'
+
+- name: Create public route table
+  ec2_vpc_route_table:
+    vpc_id: "{{ DEPLOYMENT_VPC_ID }}"
+    region: "{{ DEPLOYMENT_REGION }}"
+    purge_routes: false
+    purge_subnets: false
+    subnets:
+      - "{{ CLUSTER_SUBNET_ID }}"
+    routes:
+      - dest: 0.0.0.0/0
+        gateway_id: "{{ DEPLOYMENT_INTERNET_GATEWAY_ID }}"
+      - dest: "{{ DEPLOYMENT_CIDR }}"
+        gateway_id: local
+    tags:
+      Deployment: "{{ COMMON_DEPLOYMENT }}"
+      Network: Public
+      Name: "{{ COMMON_DEPLOYMENT }}-route-public-{{ DEPLOYMENT_NUMBER }}"
+      Number: "{{ DEPLOYMENT_NUMBER }}"
+  register: cluster_route_public
+  when: CLUSTER_NETWORK == 'public'
+- debug: var=cluster_route_public
+  when: CLUSTER_NETWORK == 'public'
+
+- debug: var=CLUSTER_ELBS[CLUSTER_NAME]
+- name: Lookup/create security groups (ELB)
+  ec2_group:
+    # Tags added in Ansible 2.4
+    name: "{{ item.group.name }}"
+    description: "Secure {{ item.group.name }}"
+    vpc_id: "{{ DEPLOYMENT_VPC_ID }}"
+    region: "{{ CLUSTER_REGION }}"
+    rules: "{{ item.group.rules }}"
+  register: cluster_security_group_elb
+  with_items: "{{ CLUSTER_ELBS[CLUSTER_NAME] | default([]) }}"
+- debug: var=cluster_security_group_elb
+
+- name: Lookup/create load balancer
+  ec2_elb_lb:
+    cross_az_load_balancing: yes
+    state: present
+    name: "{{ item.name }}"
+    listeners: "{{ item.listeners }}"
+    health_check: "{{ item.health_check }}"
+    region: "{{ CLUSTER_REGION }}"
+    tags:
+      Cluster: "{{ CLUSTER_NAME }}"
+      Deployment: "{{ COMMON_DEPLOYMENT }}"
+      Name: "{{ item.name }}"
+    security_group_names:
+      - "{{ item.group.name }}"
+    scheme: "{{ item.scheme }}"
+    subnets: "{{ item.subnets }}"
+    purge_subnets: no
+    idle_timeout: "{{ item.idle_timeout | default(60) }}"
+  with_items: "{{ CLUSTER_ELBS[CLUSTER_NAME] | default([]) }}"
+  register: cluster_elb
+  ignore_errors: yes
+- debug: var=cluster_elb
+
+- name: Lookup/create security group
+  ec2_group:
+    # Tags added in Ansible 2.4
+    name: "{{ CLUSTER_SECURITY_GROUP }}"
+    description: "{{ CLUSTER_SECURITY_GROUP_DESCRIPTION }}"
+    vpc_id: "{{ DEPLOYMENT_VPC_ID }}"
+    region: "{{ CLUSTER_REGION }}"
+    rules: "{{ CLUSTER_SECURITY_GROUP_RULES_INGRESS }}"
+  register: cluster_security_group
+- debug: var=cluster_security_group
+
+- include: instance.yml
+  when: CLUSTER_SERVICE_TYPE == 'ec2'
+- include: emr.yml
+  when: CLUSTER_SERVICE_TYPE == 'emr'
+- include: rds.yml
+  when: CLUSTER_SERVICE_TYPE == 'rds'

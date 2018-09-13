@@ -1,0 +1,55 @@
+- name: Create new instance
+  ec2:
+    key_name: "{{ CLUSTER_KEY }}"
+    instance_type: "{{ CLUSTER_INSTANCE_TYPE }}"
+    image: "{{ CLUSTER_AMI }}"
+    wait: yes
+    count: 1
+    vpc_subnet_id: "{{ cluster_subnet.subnet.id }}"
+    assign_public_ip: "{{ CLUSTER_ASSIGN_PUBLIC_IP }}"
+    instance_tags:
+      Birthday: "{{ lookup('pipe', \"date -u +'%Y-%m-%d %H:%M:%S'\") }}"
+      Cluster: "{{ CLUSTER_NAME }}"
+      Deployment: "{{ COMMON_DEPLOYMENT }}"
+      Name: "{{ CLUSTER_INSTANCE_TAG_NAME }}"
+      Number: "{{ CLUSTER_NUMBER }}"
+      todo: deploy
+    groups: "{{ CLUSTER_SECURITY_GROUPS }}"
+    region: "{{ CLUSTER_REGION }}"
+    volumes:
+      - device_name: /dev/sda1
+        volume_size: "{{ CLUSTER_EBS_SIZE }}"
+        volume_type: gp2
+        delete_on_termination: true
+  register: ec2
+- debug:
+    var: item
+  with_items: "{{ ec2.instances | default([])}}"
+- name: Set ansible host facts
+  set_fact:
+    cluster_ansible_host: "{{ item.private_ip }}"
+  with_items: "{{ ec2.instances | default([])}}"
+- name: Set ansible host facts
+  set_fact:
+    cluster_ansible_host: "{{ item.public_ip }}"
+  with_items: "{{ ec2.instances | default([])}}"
+  when: item.public_ip
+- name: Add new instance to host group
+  add_host:
+    name: "{{ cluster_ansible_host }}"
+    groups:
+      - cluster_group_launched
+      - tag_todo_deploy
+      - "tag_Deployment_{{ COMMON_DEPLOYMENT }}"
+      - "tag_Cluster_{{ CLUSTER_NAME }}"
+      - "tag_Number_{{ CLUSTER_NUMBER }}"
+      - "tag_Name_{{ CLUSTER_INSTANCE_TAG_NAME }}"
+- name: Wait for SSH to come up
+  wait_for:
+    host: "{{ cluster_ansible_host }}"
+    port: 22
+    delay: 20
+    timeout: 120
+  register: command
+  # failed_when: command.rc != 0 and CLUSTER_NAME != 'deploy'
+- debug: var=command

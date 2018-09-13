@@ -36,16 +36,6 @@
     - install
     - install:base
 
-- name: create directory for hostkey
-  file: >
-    dest="{{ edxapp_user_home_dir }}/.ssh"
-    mode=0700
-    owner={{ edxapp_user }}
-    group={{ edxapp_user }}
-    state=directory
-  sudo_user: "{{ edxapp_user }}"
-  when: EDXAPP_USE_GIT_IDENTITY
-
 - name: set git fetch.prune to ignore deleted remote refs
   shell: git config --global fetch.prune true
   become_user: "{{ edxapp_user }}"
@@ -98,10 +88,11 @@
 
 - name: checkout comprehensive theme
   git:
-    dest: "{{ EDXAPP_COMPREHENSIVE_THEME_DIR }}"
+    dest: "{{ item }}"
     repo: "{{ EDXAPP_COMPREHENSIVE_THEME_SOURCE_REPO }}"
     version: "{{ EDXAPP_COMPREHENSIVE_THEME_VERSION }}"
     accept_hostkey: yes
+  with_items: "{{ EDXAPP_COMPREHENSIVE_THEME_DIRS }}"
   when: EDXAPP_ENABLE_COMPREHENSIVE_THEMING
   become_user: "{{ edxapp_user }}"
   environment:
@@ -326,7 +317,7 @@
     - install:app-requirements
 
 - name: compiling all py files in the edx-platform repo
-  shell: "{{ edxapp_venv_bin }}/python -m compileall -q -x .git/.* {{ edxapp_code_dir }}"
+  shell: "{{ edxapp_venv_bin }}/python -m compileall -q -x '.git/.*|node_modules/' {{ edxapp_code_dir }}"
   become_user: "{{ edxapp_user }}"
   tags:
     - install
