@@ -12,6 +12,21 @@
   gather_facts: True
   become: True
   vars:
+    ANALYTICS_API_DATABASES:
+      default:
+        ENGINE: 'django.db.backends.mysql'
+        NAME: "{{ ANALYTICS_API_DEFAULT_DB_NAME }}"
+        USER: "{{ ANALYTICS_MYSQL_USERNAME }}"
+        PASSWORD: "{{ ANALYTICS_MYSQL_PASSWORD }}"
+        HOST: "{{ ANALYTICS_MYSQL_HOST }}"
+        PORT: "{{ ANALYTICS_MYSQL_PORT }}"
+      reports:
+        ENGINE: 'django.db.backends.mysql'
+        NAME: "{{ ANALYTICS_API_REPORTS_DB_NAME }}"
+        USER: "{{ ANALYTICS_MYSQL_USERNAME }}"
+        PASSWORD: "{{ ANALYTICS_MYSQL_PASSWORD }}"
+        HOST: "{{ ANALYTICS_MYSQL_HOST }}"
+        PORT: "{{ ANALYTICS_MYSQL_PORT }}"
     CLUSTER_NAME: insights
     CLUSTER_NUMBER: 1
     COMMON_MYSQL_MIGRATE_PASS: "{{ ANALYTICS_MYSQL_PASSWORD }}"
@@ -33,6 +48,7 @@
     migrate_db: 'yes'
     disable_edx_services: false
   vars_files:
+    - "{{ COMMON_DEPLOYMENT_DIR }}/analytics-api.yml"
     - "{{ COMMON_DEPLOYMENT_DIR }}/common.yaml"
     - "{{ COMMON_DEPLOYMENT_DIR }}/{{ CLUSTER_NAME }}.yml"
     - "{{ COMMON_DEPLOYMENT_DIR }}/db.yml"
