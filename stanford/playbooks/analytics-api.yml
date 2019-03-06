@@ -44,12 +44,10 @@
   roles:
     - aws
     - security
-    - mysql
-    - edxlocal
-    - analytics_api
     - role: nginx
-      nginx_sites:
+      nginx_default_sites:
         - analytics_api
+    - analytics_api
     - role: postfix_queue
       when: POSTFIX_QUEUE_EXTERNAL_SMTP_HOST != ''
   tasks:
