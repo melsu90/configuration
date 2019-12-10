@@ -1,5 +1,5 @@
 ---
-ansible_jumpbox: jump1.lagunita.stanford.edu
+ansible_jumpbox: jump1.shiksha.fun
 secure_dir: ../../../etc/ansible
 region: us-west-1
 
